@@ -20,6 +20,7 @@
 #include<string>
 #include<vector>
 #include<iostream>
+#include<random>
 
 #include "RAJA/RAJA.hxx"
 
@@ -256,12 +257,13 @@ void runLTimesTest(std::string const &policy, Index_type num_moments, Index_type
     std::vector<double> psi_data(num_directions*num_groups*num_zones);
     std::vector<double> phi_data(num_moments*num_groups*num_zones, 0.0);
 
+    std::uniform_real_distribution<> rand_gen(0, 1);
     // randomize data
     for(size_t i = 0;i < ell_data.size();++i){
-      ell_data[i] = drand48();
+      ell_data[i] = rand_gen();
     }
     for(size_t i = 0;i < psi_data.size();++i){
-      psi_data[i] = drand48();
+      psi_data[i] = rand_gen();
     }
 
 
