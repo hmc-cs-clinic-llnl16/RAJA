@@ -142,6 +142,13 @@ typedef aligned_real_type* RAJA_RESTRICT TDRAReal_ptr;
 
 typedef const aligned_real_type* RAJA_RESTRICT const_TDRAReal_ptr;
 
+#elif defined(RAJA_COMPILER_MSVC)
+
+typedef Real_type aligned_real_type __declspec(align(RAJA::DATA_ALIGN));
+typedef aligned_real_type* RAJA_RESTRICT TDRAReal_ptr;
+
+typedef const aligned_real_type* RAJA_RESTRICT const_TDRAReal_ptr;
+
 #else
 #error RAJA compiler is undefined!
 
