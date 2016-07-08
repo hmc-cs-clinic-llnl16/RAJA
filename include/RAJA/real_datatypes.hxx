@@ -120,7 +120,7 @@ typedef const Real_type* RAJA_RESTRICT __attribute__((align_value(RAJA::DATA_ALI
 #endif
 
 
-#elif defined(RAJA_COMPILER_GNU) 
+#elif defined(RAJA_COMPILER_GNU)
 //
 // Nothing here for now because alignment attribute is not working...
 //
@@ -142,15 +142,13 @@ typedef aligned_real_type* RAJA_RESTRICT TDRAReal_ptr;
 
 typedef const aligned_real_type* RAJA_RESTRICT const_TDRAReal_ptr;
 
-#elif defined(RAJA_COMPILER_MSVC)
+#else
 
-typedef Real_type aligned_real_type __declspec(align(RAJA::DATA_ALIGN));
+typedef Real_type aligned_real_type alignas(RAJA::DATA_ALIGN) ;
 typedef aligned_real_type* RAJA_RESTRICT TDRAReal_ptr;
 
 typedef const aligned_real_type* RAJA_RESTRICT const_TDRAReal_ptr;
 
-#else
-#error RAJA compiler is undefined!
 
 #endif
 
