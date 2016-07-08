@@ -57,7 +57,7 @@
 #include "RAJA/config.hxx"
 
 #include "RAJA/int_datatypes.hxx"
-#include <unistd.h>
+#include <stddef.h>
 
 
 namespace RAJA {

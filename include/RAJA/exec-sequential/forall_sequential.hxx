@@ -341,7 +341,7 @@ void forall_Icount(seq_exec,
 template <typename LOOP_BODY>
 RAJA_INLINE
 void forall(seq_exec,
-            const Index_type* __restrict__ idx, Index_type len,
+            const Index_type* RAJA_RESTRICT idx, Index_type len,
             LOOP_BODY loop_body)
 {
    RAJA_FT_BEGIN ;
@@ -367,7 +367,7 @@ void forall(seq_exec,
 template <typename LOOP_BODY>
 RAJA_INLINE
 void forall_Icount(seq_exec,
-                   const Index_type* __restrict__ idx, Index_type len,
+                   const Index_type* RAJA_RESTRICT idx, Index_type len,
                    Index_type icount,
                    LOOP_BODY loop_body)
 {
@@ -403,7 +403,7 @@ void forall(seq_exec,
             const ListSegment& iseg,
             LOOP_BODY loop_body)
 {
-   const Index_type* __restrict__ idx = iseg.getIndex();
+   const Index_type* RAJA_RESTRICT idx = iseg.getIndex();
    Index_type len = iseg.getLength();
 
    RAJA_FT_BEGIN ;
@@ -432,7 +432,7 @@ void forall_Icount(seq_exec,
                    Index_type icount, 
                    LOOP_BODY loop_body)
 {
-   const Index_type* __restrict__ idx = iseg.getIndex();
+   const Index_type* RAJA_RESTRICT idx = iseg.getIndex();
    Index_type len = iseg.getLength();
 
    RAJA_FT_BEGIN ;

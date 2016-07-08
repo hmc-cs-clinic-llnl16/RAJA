@@ -581,7 +581,7 @@ void forall_Icount(omp_for_nowait_exec,
 template <typename LOOP_BODY>
 RAJA_INLINE
 void forall(omp_parallel_for_exec,
-            const Index_type* __restrict__ idx, Index_type len,
+            const Index_type* RAJA_RESTRICT idx, Index_type len,
             LOOP_BODY loop_body)
 {
    RAJA_FT_BEGIN ;
@@ -605,7 +605,7 @@ void forall(omp_parallel_for_exec,
 template <typename LOOP_BODY>
 RAJA_INLINE
 void forall(omp_for_nowait_exec,
-            const Index_type* __restrict__ idx, Index_type len,
+            const Index_type* RAJA_RESTRICT idx, Index_type len,
             LOOP_BODY loop_body)
 {
    RAJA_FT_BEGIN ;
@@ -632,7 +632,7 @@ void forall(omp_for_nowait_exec,
 template <typename LOOP_BODY>
 RAJA_INLINE
 void forall_Icount(omp_parallel_for_exec,
-                   const Index_type* __restrict__ idx, Index_type len,
+                   const Index_type* RAJA_RESTRICT idx, Index_type len,
                    Index_type icount,
                    LOOP_BODY loop_body)
 {
@@ -661,7 +661,7 @@ void forall_Icount(omp_parallel_for_exec,
 template <typename LOOP_BODY>
 RAJA_INLINE
 void forall_Icount(omp_for_nowait_exec,
-                   const Index_type* __restrict__ idx, Index_type len,
+                   const Index_type* RAJA_RESTRICT idx, Index_type len,
                    Index_type icount,
                    LOOP_BODY loop_body)
 {
@@ -697,7 +697,7 @@ void forall(omp_parallel_for_exec,
             const ListSegment& iseg,
             LOOP_BODY loop_body)
 {
-   const Index_type* __restrict__ idx = iseg.getIndex();
+   const Index_type* RAJA_RESTRICT idx = iseg.getIndex();
    Index_type len = iseg.getLength();
 
    RAJA_FT_BEGIN ;
@@ -724,7 +724,7 @@ void forall(omp_for_nowait_exec,
             const ListSegment& iseg,
             LOOP_BODY loop_body)
 {
-   const Index_type* __restrict__ idx = iseg.getIndex();
+   const Index_type* RAJA_RESTRICT idx = iseg.getIndex();
    Index_type len = iseg.getLength();
 
    RAJA_FT_BEGIN ;
@@ -756,7 +756,7 @@ void forall_Icount(omp_parallel_for_exec,
                    Index_type icount,
                    LOOP_BODY loop_body)
 {
-   const Index_type* __restrict__ idx = iseg.getIndex();
+   const Index_type* RAJA_RESTRICT idx = iseg.getIndex();
    Index_type len = iseg.getLength();
 
    RAJA_FT_BEGIN ;
@@ -787,7 +787,7 @@ void forall_Icount(omp_for_nowait_exec,
                    Index_type icount,
                    LOOP_BODY loop_body)
 {
-   const Index_type* __restrict__ idx = iseg.getIndex();
+   const Index_type* RAJA_RESTRICT idx = iseg.getIndex();
    Index_type len = iseg.getLength();
 
    RAJA_FT_BEGIN ;
@@ -879,7 +879,7 @@ void forall( IndexSet::ExecPolicy<omp_taskgraph_segit, SEG_EXEC_POLICY_T>,
       // the method call will be changed at the end of the for-loop
       // from another executing thread.
       //
-      volatile int* __restrict__ semVal = &(task->semaphoreValue());
+      volatile int* RAJA_RESTRICT semVal = &(task->semaphoreValue());
 
       while(*semVal != 0) {
          /* spin or (better) sleep here */ ;
@@ -1047,7 +1047,7 @@ void forall_segments(omp_taskgraph_segit,
          // the method call will be changed at the end of the for-loop
          // from another executing thread.
          //
-         volatile int* __restrict__ semVal = &(task->semaphoreValue());
+         volatile int* RAJA_RESTRICT semVal = &(task->semaphoreValue());
 
          while (*semVal != 0) {
             /* spin or (better) sleep here */ ;
@@ -1152,7 +1152,7 @@ void forall_segments(omp_taskgraph_interval_segit,
          // the method call will be changed at the end of the for-loop
          // from another executing thread.
          //
-         volatile int* __restrict__ semVal = &(task->semaphoreValue());
+         volatile int* RAJA_RESTRICT semVal = &(task->semaphoreValue());
 
          while (*semVal != 0) {
             /* spin or (better) sleep here */ ;
