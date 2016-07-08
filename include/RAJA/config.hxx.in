@@ -229,6 +229,12 @@ const int COHERENCE_BLOCK_SIZE = @RAJA_COHERENCE_BLOCK_SIZE@;
 
 #define RAJA_SIMD  // TODO: Define this...
 
+#else
+
+#define RAJA_INLINE inline 
+#define RAJA_ALIGN_DATA(d) // TODO: Define this...
+#define RAJA_SIMD  // TODO: Define this...
+
 #endif
 
 }  // closing brace for RAJA namespace
