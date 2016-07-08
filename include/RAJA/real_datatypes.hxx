@@ -144,7 +144,7 @@ typedef const aligned_real_type* RAJA_RESTRICT const_TDRAReal_ptr;
 
 #else
 
-typedef Real_type aligned_real_type alignas(RAJA::DATA_ALIGN) ;
+typedef Real_type aligned_real_type ; // Aligned only to its size
 typedef aligned_real_type* RAJA_RESTRICT TDRAReal_ptr;
 
 typedef const aligned_real_type* RAJA_RESTRICT const_TDRAReal_ptr;
