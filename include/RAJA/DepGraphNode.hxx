@@ -57,6 +57,7 @@
 #include "RAJA/config.hxx"
 
 #include "RAJA/int_datatypes.hxx"
+#include "RAJA/MemUtils_CPU.hxx"
 
 #include <cstdlib>
 #include <iosfwd>
@@ -92,10 +93,8 @@ public:
    DepGraphNode()
       : m_num_dep_tasks(0),
         m_semaphore_reload_value(0),
-        m_semaphore_value(0) 
+        m_semaphore_value((int*)allocate_aligned(_SemaphoreValueAlign_, sizeof(int))) 
    { 
-      posix_memalign((void **)(&m_semaphore_value), 
-                     _SemaphoreValueAlign_, sizeof(int)) ;
       *m_semaphore_value = 0 ;       
    }
 

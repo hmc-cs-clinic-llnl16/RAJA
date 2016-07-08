@@ -57,9 +57,15 @@
 #include "RAJA/config.hxx"
 
 #include "RAJA/int_datatypes.hxx"
+#include <unistd.h>
 
 
 namespace RAJA {
+
+///
+/// Portable aligned memory allocation
+///
+void * allocate_aligned(size_t alignment, size_t size);
 
 ///
 /// Typedef defining common data type for RAJA-CPU reduction data blocks
