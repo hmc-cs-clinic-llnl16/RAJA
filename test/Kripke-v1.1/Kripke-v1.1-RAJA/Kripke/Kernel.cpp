@@ -79,14 +79,20 @@ RAJA_INLINE
 void callKernelWithPolicy(Nesting_Order nesting_order, KERNEL kernel, ARGS & ... args){
   switch(nesting_order){
     case NEST_DGZ: kernel(NEST_DGZ_T(), args...); break;
-#ifndef RAJA_COMPILER_ICC
+#if defined(TAKE_FOREVER) && TAKE_FOREVER > 0
     case NEST_DZG: kernel(NEST_DZG_T(), args...); break;
+#endif
+#if defined(TAKE_FOREVER) && TAKE_FOREVER > 1
     case NEST_GDZ: kernel(NEST_GDZ_T(), args...); break;
+#endif
+#if defined(TAKE_FOREVER) && TAKE_FOREVER > 2
     case NEST_GZD: kernel(NEST_GZD_T(), args...); break;
+#endif
+#if defined(TAKE_FOREVER) && TAKE_FOREVER > 3
     case NEST_ZDG: kernel(NEST_ZDG_T(), args...); break;
+#endif
+#if defined(TAKE_FOREVER) && TAKE_FOREVER > 4
     case NEST_ZGD: kernel(NEST_ZGD_T(), args...); break;
-#else
-    default: KripkeAbort("All nesting orders except DGZ are currently disabled with the Intel compilers\n");
 #endif
   }
 }
