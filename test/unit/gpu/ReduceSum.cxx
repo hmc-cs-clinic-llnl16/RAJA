@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
       for (int k = 0; k < loops; k++) {
         s_ntests_run++;
 
-        forall<cuda_exec<block_size> >(0, TEST_VEC_LEN, [=] __device__(int i) {
+        forall<cuda_exec<block_size> >(0, TEST_VEC_LEN, [=] (int i) __device__{
           dsum0 += dvalue[i];
           dsum1 += dvalue[i] * 2.0;
           dsum2 += dvalue[i] * 3.0;
@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
       ReduceSum<cuda_reduce<block_size>, int> isum3(itinit * 4);
 
       forall<IndexSet::ExecPolicy<seq_segit, cuda_exec<block_size> > >(
-          iset, [=] __device__(int i) {
+          iset, [=] (int i) __device__{
             dsum0 += dvalue[i];
             isum1 += 2 * ivalue[i];
             dsum2 += 3 * dvalue[i];
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
       ReduceSum<cuda_reduce<block_size>, int> isum3(itinit * 4);
 
       forall<IndexSet::ExecPolicy<seq_segit, cuda_exec<block_size> > >(
-          iset, [=] __device__(int i) {
+          iset, [=] (int i) __device__{
             dsum0 += dvalue[i];
             isum1 += 2 * ivalue[i];
             dsum2 += 3 * dvalue[i];

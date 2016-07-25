@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 
         // printf("droll[%d] =  %lf : dcurrentMax[%d] =
         // %lf\n",lmax.idx,lmax.val,dcurrentMax.idx,dcurrentMax.val);
-        forall<cuda_exec<block_size> >(0, TEST_VEC_LEN, [=] __device__(int i) {
+        forall<cuda_exec<block_size> >(0, TEST_VEC_LEN, [=] (int i) __device__{
           dmax0.maxloc(dvalue[i], i);
           dmax1.maxloc(2 * dvalue[i], i);
           dmax2.maxloc(dvalue[i], i);
@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
       dcurrentMax = RAJA_MAXLOC(dcurrentMax, lmax);
 
       forall<IndexSet::ExecPolicy<seq_segit, cuda_exec<block_size> > >(
-          iset, [=] __device__(int i) {
+          iset, [=] (int i) __device__{
             dmax0.maxloc(dvalue[i], i);
             dmax1.maxloc(2 * dvalue[i], i);
           });
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
       dcurrentMax = RAJA_MAXLOC(dcurrentMax, lmax);
 
       forall<IndexSet::ExecPolicy<seq_segit, cuda_exec<block_size> > >(
-          iset, [=] __device__(int i) {
+          iset, [=] (int i) __device__{
             dmax0.maxloc(dvalue[i], i);
             dmax1.maxloc(2 * dvalue[i], i);
           });

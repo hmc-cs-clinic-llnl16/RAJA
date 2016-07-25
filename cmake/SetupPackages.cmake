@@ -54,6 +54,7 @@ endif()
 
 if (RAJA_ENABLE_CUDA)
   find_package(CUDA)
+  set(CMAKE_CXX_COMPILER clang++)
   if(CUDA_FOUND)
     message(STATUS "CUDA Enabled")
     set (CUDA_NVCC_FLAGS ${RAJA_NVCC_FLAGS})

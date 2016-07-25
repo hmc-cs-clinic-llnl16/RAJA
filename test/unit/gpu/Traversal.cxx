@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
 
   forall<cuda_exec<block_size> >(0,
                                  array_length,
-                                 [=] __device__(Index_type idx) {
+                                 [=] (Index_type idx) __device__{
                                    test_array[idx] = parent[idx] * parent[idx];
                                  });
 
@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
   }
 
   forall<IndexSet::ExecPolicy<seq_segit, cuda_exec<block_size> > >(
-      iset, [=] __device__(Index_type idx) {
+      iset, [=] (Index_type idx) __device__{
         test_array[idx] = parent[idx] * parent[idx];
       });
 
@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
   }
 
   forall_Icount<cuda_exec<block_size> >(
-      0, array_length, 0, [=] __device__(Index_type icount, Index_type idx) {
+      0, array_length, 0, [=] (Index_type icount, Index_type idx) __device__{
         test_array[icount] = parent[idx] * parent[idx];
       });
 
@@ -326,7 +326,7 @@ int main(int argc, char *argv[])
   }
 
   forall_Icount<IndexSet::ExecPolicy<seq_segit, cuda_exec<block_size> > >(
-      iset, [=] __device__(Index_type icount, Index_type idx) {
+      iset, [=] (Index_type icount, Index_type idx) __device__{
         test_array[icount] = parent[idx] * parent[idx];
       });
 
