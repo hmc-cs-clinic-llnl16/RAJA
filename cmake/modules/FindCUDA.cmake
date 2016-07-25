@@ -535,10 +535,12 @@ if(NOT "${CUDA_TOOLKIT_ROOT_DIR}" STREQUAL "${CUDA_TOOLKIT_ROOT_DIR_INTERNAL}")
   unset(CUDA_TOOLKIT_TARGET_DIR CACHE)
   unset(CUDA_NVCC_EXECUTABLE CACHE)
   unset(CUDA_VERSION CACHE)
+  MESSAGE("OOPS")
   cuda_unset_include_and_libraries()
 endif()
 
 if(NOT "${CUDA_TOOLKIT_TARGET_DIR}" STREQUAL "${CUDA_TOOLKIT_TARGET_DIR_INTERNAL}")
+  MESSAGE("OOPS")
   cuda_unset_include_and_libraries()
 endif()
 
@@ -835,6 +837,14 @@ set(CUDA_SDK_SEARCH_PATH
 # Check for required components
 set(CUDA_FOUND TRUE)
 
+if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__CUDACC__ -D__CUDA_CONSTEXPR__=constexpr -stdlib=libc++ -x cuda -arch=sm_30")
+  add_definitions("-D__CUDACC__ -D__CUDA_CONSTEXPR__=constexpr -stdlib=libc++ -x cuda --cuda-gpu-arch=sm_30")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -I/usr/include/c++/4.6.1/ -I/usr/include/c++/4.6.1/x86_64-redhat-linux6E -lcudart")
+  include_directories("/usr/include/c++/4.6.1")
+  include_directories("/usr/include/c++/4.6.1/x86_64-redhat-linux6E/")
+endif()
+MESSAGE("FLAGS ARE NOW ${CMAKE_CXX_FLAGS}")
 set(CUDA_TOOLKIT_ROOT_DIR_INTERNAL "${CUDA_TOOLKIT_ROOT_DIR}" CACHE INTERNAL
   "This is the value of the last time CUDA_TOOLKIT_ROOT_DIR was set successfully." FORCE)
 set(CUDA_TOOLKIT_TARGET_DIR_INTERNAL "${CUDA_TOOLKIT_TARGET_DIR}" CACHE INTERNAL
@@ -1480,44 +1490,48 @@ endfunction()
 ###############################################################################
 ###############################################################################
 macro(CUDA_ADD_LIBRARY cuda_target)
-
   CUDA_ADD_CUDA_INCLUDE_ONCE()
+  if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
+    add_library(${cuda_target} ${ARGN})
+    include_directories(/opt/cudatoolkit-7.5/include)
+    target_link_libraries(${cuda_target} cudart)
+  else()
 
-  # Separate the sources from the options
-  CUDA_GET_SOURCES_AND_OPTIONS(_sources _cmake_options _options ${ARGN})
-  CUDA_BUILD_SHARED_LIBRARY(_cuda_shared_flag ${ARGN})
-  # Create custom commands and targets for each file.
-  CUDA_WRAP_SRCS( ${cuda_target} OBJ _generated_files ${_sources}
-    ${_cmake_options} ${_cuda_shared_flag}
-    OPTIONS ${_options} )
+    # Separate the sources from the options
+    CUDA_GET_SOURCES_AND_OPTIONS(_sources _cmake_options _options ${ARGN})
+    CUDA_BUILD_SHARED_LIBRARY(_cuda_shared_flag ${ARGN})
+    # Create custom commands and targets for each file.
+    CUDA_WRAP_SRCS( ${cuda_target} OBJ _generated_files ${_sources}
+      ${_cmake_options} ${_cuda_shared_flag}
+      OPTIONS ${_options} )
 
-  # Compute the file name of the intermedate link file used for separable
-  # compilation.
-  CUDA_COMPUTE_SEPARABLE_COMPILATION_OBJECT_FILE_NAME(link_file ${cuda_target} "${${cuda_target}_SEPARABLE_COMPILATION_OBJECTS}")
+    # Compute the file name of the intermedate link file used for separable
+    # compilation.
+    CUDA_COMPUTE_SEPARABLE_COMPILATION_OBJECT_FILE_NAME(link_file ${cuda_target} "${${cuda_target}_SEPARABLE_COMPILATION_OBJECTS}")
 
-  # Add the library.
-  add_library(${cuda_target} ${_cmake_options}
-    ${_generated_files}
-    ${_sources}
-    ${link_file}
-    )
+    # Add the library.
+    add_library(${cuda_target} ${_cmake_options}
+      ${_generated_files}
+      ${_sources}
+      ${link_file}
+      )
 
-  # Add a link phase for the separable compilation if it has been enabled.  If
-  # it has been enabled then the ${cuda_target}_SEPARABLE_COMPILATION_OBJECTS
-  # variable will have been defined.
-  CUDA_LINK_SEPARABLE_COMPILATION_OBJECTS("${link_file}" ${cuda_target} "${_options}" "${${cuda_target}_SEPARABLE_COMPILATION_OBJECTS}")
+    # Add a link phase for the separable compilation if it has been enabled.  If
+    # it has been enabled then the ${cuda_target}_SEPARABLE_COMPILATION_OBJECTS
+    # variable will have been defined.
+    CUDA_LINK_SEPARABLE_COMPILATION_OBJECTS("${link_file}" ${cuda_target} "${_options}" "${${cuda_target}_SEPARABLE_COMPILATION_OBJECTS}")
 
-  target_link_libraries(${cuda_target}
-    ${CUDA_LIBRARIES}
-    )
+    target_link_libraries(${cuda_target}
+      ${CUDA_LIBRARIES}
+      )
 
-  # We need to set the linker language based on what the expected generated file
-  # would be. CUDA_C_OR_CXX is computed based on CUDA_HOST_COMPILATION_CPP.
-  set_target_properties(${cuda_target}
-    PROPERTIES
-    LINKER_LANGUAGE ${CUDA_C_OR_CXX}
-    )
-
+    # We need to set the linker language based on what the expected generated file
+    # would be. CUDA_C_OR_CXX is computed based on CUDA_HOST_COMPILATION_CPP.
+    set_target_properties(${cuda_target}
+      PROPERTIES
+      LINKER_LANGUAGE ${CUDA_C_OR_CXX}
+      )
+  endif()
 endmacro()
 
 
@@ -1527,41 +1541,43 @@ endmacro()
 ###############################################################################
 ###############################################################################
 macro(CUDA_ADD_EXECUTABLE cuda_target)
-
   CUDA_ADD_CUDA_INCLUDE_ONCE()
+  if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
+    add_executable(${cuda_target} ${ARGN})
+  else() 
 
-  # Separate the sources from the options
-  CUDA_GET_SOURCES_AND_OPTIONS(_sources _cmake_options _options ${ARGN})
-  # Create custom commands and targets for each file.
-  CUDA_WRAP_SRCS( ${cuda_target} OBJ _generated_files ${_sources} OPTIONS ${_options} )
+    # Separate the sources from the options
+    CUDA_GET_SOURCES_AND_OPTIONS(_sources _cmake_options _options ${ARGN})
+    # Create custom commands and targets for each file.
+    CUDA_WRAP_SRCS( ${cuda_target} OBJ _generated_files ${_sources} OPTIONS ${_options} )
 
-  # Compute the file name of the intermedate link file used for separable
-  # compilation.
-  CUDA_COMPUTE_SEPARABLE_COMPILATION_OBJECT_FILE_NAME(link_file ${cuda_target} "${${cuda_target}_SEPARABLE_COMPILATION_OBJECTS}")
+    # Compute the file name of the intermedate link file used for separable
+    # compilation.
+    CUDA_COMPUTE_SEPARABLE_COMPILATION_OBJECT_FILE_NAME(link_file ${cuda_target} "${${cuda_target}_SEPARABLE_COMPILATION_OBJECTS}")
 
-  # Add the library.
-  add_executable(${cuda_target} ${_cmake_options}
-    ${_generated_files}
-    ${_sources}
-    ${link_file}
-    )
+    # Add the library.
+    add_executable(${cuda_target} ${_cmake_options}
+      ${_generated_files}
+      ${_sources}
+      ${link_file}
+      )
 
-  # Add a link phase for the separable compilation if it has been enabled.  If
-  # it has been enabled then the ${cuda_target}_SEPARABLE_COMPILATION_OBJECTS
-  # variable will have been defined.
-  CUDA_LINK_SEPARABLE_COMPILATION_OBJECTS("${link_file}" ${cuda_target} "${_options}" "${${cuda_target}_SEPARABLE_COMPILATION_OBJECTS}")
+    # Add a link phase for the separable compilation if it has been enabled.  If
+    # it has been enabled then the ${cuda_target}_SEPARABLE_COMPILATION_OBJECTS
+    # variable will have been defined.
+    CUDA_LINK_SEPARABLE_COMPILATION_OBJECTS("${link_file}" ${cuda_target} "${_options}" "${${cuda_target}_SEPARABLE_COMPILATION_OBJECTS}")
 
-  target_link_libraries(${cuda_target}
-    ${CUDA_LIBRARIES}
-    )
+    target_link_libraries(${cuda_target}
+      ${CUDA_LIBRARIES}
+      )
 
-  # We need to set the linker language based on what the expected generated file
-  # would be. CUDA_C_OR_CXX is computed based on CUDA_HOST_COMPILATION_CPP.
-  set_target_properties(${cuda_target}
-    PROPERTIES
-    LINKER_LANGUAGE ${CUDA_C_OR_CXX}
-    )
-
+    # We need to set the linker language based on what the expected generated file
+    # would be. CUDA_C_OR_CXX is computed based on CUDA_HOST_COMPILATION_CPP.
+    set_target_properties(${cuda_target}
+      PROPERTIES
+      LINKER_LANGUAGE ${CUDA_C_OR_CXX}
+      )
+  endif()
 endmacro()
 
 

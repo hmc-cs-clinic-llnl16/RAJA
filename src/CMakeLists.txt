@@ -41,7 +41,7 @@
 ###############################################################################
 
 if (RAJA_ENABLE_CUDA)
-  cuda_add_library(RAJA
+  add_library(RAJA
       AlignedRangeIndexSetBuilders.cxx
       DepGraphNode.cxx
       IndexSet.cxx

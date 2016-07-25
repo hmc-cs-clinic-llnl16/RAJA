@@ -140,7 +140,7 @@ void runLTimesTest(std::string const &policy,
       RangeSegment(0, num_directions),
       RangeSegment(0, num_groups),
       RangeSegment(0, num_zones),
-      [=] __device__(IMoment m, IDirection d, IGroup g, IZone z) {
+      [=] (IMoment m, IDirection d, IGroup g, IZone z) __device__ {
         // printf("%d,%d,%d,%d\n", *m, *d, *g, *z);
         double val = ell(m, d) * psi(d, g, z);
         phi(m, g, z) += val;
@@ -286,11 +286,25 @@ struct PolLTimesB_GPU {
 // Combine OMP Parallel, omp nowait, and cuda thread-block launch
 struct PolLTimesC_GPU {
   // Loops: Moments, Directions, Groups, Zones
+  struct ForallN_Debug_Parallel_Tag {
+  };
+  template <typename NEXT = Execute>
+  struct Debug_Parallel {
+    // Identify this policy
+    typedef ForallN_Debug_Parallel_Tag PolicyTag;
+  
+    // The next nested-loop execution policy
+    typedef NEXT NextPolicy;
+  };
   typedef NestedPolicy<ExecList<seq_exec,
                                 seq_exec,
+                                #ifdef RAJA_ENABLE_OPENMP
                                 omp_for_nowait_exec,
+                                #else
+                                seq_exec,
+                                #endif
                                 cuda_threadblock_y_exec<32>>,
-                       OMP_Parallel<>>
+                       Debug_Parallel<>>
       EXEC;
 
   // psi[direction, group, zone]
@@ -315,8 +329,8 @@ void runLTimesTests(Index_type num_moments,
       "PolLTimesA_GPU", num_moments, num_directions, num_groups, num_zones);
   runLTimesTest<PolLTimesB_GPU>(
       "PolLTimesB_GPU", num_moments, num_directions, num_groups, num_zones);
-  runLTimesTest<PolLTimesC_GPU>(
-      "PolLTimesC_GPU", num_moments, num_directions, num_groups, num_zones);
+  //runLTimesTest<PolLTimesC_GPU>(
+  //    "PolLTimesC_GPU", num_moments, num_directions, num_groups, num_zones);
 }
 
 void runNegativeRange()
@@ -337,7 +351,7 @@ void runNegativeRange()
 
   forallN<NestedPolicy<ExecList<cuda_threadblock_y_exec<16>,
                                 cuda_threadblock_x_exec<16>>>>(
-      RangeSegment(-2, 8), RangeSegment(-2, 8), [=] RAJA_DEVICE(int k, int j) {
+      RangeSegment(-2, 8), RangeSegment(-2, 8), [=] (int k, int j) RAJA_DEVICE{
         const int idx = ((k - -2) * 10) + (j - -2);
         data[idx] = idx * 1.0;
       });
