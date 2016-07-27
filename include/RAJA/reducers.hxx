@@ -59,7 +59,7 @@
 /// Define max number of reductions allowed within a RAJA traversal
 /// (sizes of shared memory blocks for reductions are set based on this value)
 ///
-#define RAJA_MAX_REDUCE_VARS (8)
+#define RAJA_MAX_REDUCE_VARS (32)
 
 namespace RAJA
 {
