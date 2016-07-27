@@ -189,8 +189,10 @@ __device__ inline void atomicMax(float *address, double value)
   }
 }
 
+#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
+#else
 ///
-__device__ void atomicAdd(double *address, double value)
+__device__ inline void atomicAdd(double *address, double value)
 {
   unsigned long long oldval, newval, readback;
 
@@ -202,6 +204,8 @@ __device__ void atomicAdd(double *address, double value)
     newval = __double_as_longlong(__longlong_as_double(oldval) + value);
   }
 }
+
+#endif
 
 #elif defined(RAJA_USE_ATOMIC_TWO)
 
@@ -290,6 +294,8 @@ __device__ inline void atomicMax(float *address, float value)
   }
 }
 
+#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
+#else
 ///
 __device__ inline void atomicAdd(double *address, double value)
 {
@@ -305,6 +311,7 @@ __device__ inline void atomicAdd(double *address, double value)
   } while (assumed != oldval);
 }
 
+#endif
 
 #elif defined(RAJA_USE_NO_ATOMICS)
 
