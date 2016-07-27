@@ -323,6 +323,87 @@ __device__ inline void atomicAdd(double *address, double value)
 
 #endif
 
+/*!
+ ******************************************************************************
+ *
+ * \brief Kernel to set memory at to 0 before offset and then val in
+ *        next N locations after offset
+ *
+ ******************************************************************************
+ */
+template <typename T0>
+__global__
+void rajaCudaMemsetType(T0* ptr0, T0 val0, int N0)
+{
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+
+    if (i < N0) {
+        ptr0[i] = val0;
+    }
+}
+
+template <typename T0, typename T1>
+__global__
+void rajaCudaMemsetType(T0* ptr0, T0 val0, int N0,
+                        T1* ptr1, T1 val1, int N1)
+{
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+
+    if (i < N0) {
+      ptr0[i] = val0;
+    } else if (i < N0+N1) {
+      i -= N0;
+      ptr1[i] = val1;
+    }
+}
+
+template <typename T0, typename T1, typename T2>
+__global__
+void rajaCudaMemsetType(T0* ptr0, T0 val0, int N0,
+                        T1* ptr1, T1 val1, int N1,
+                        T2* ptr2, T2 val2, int N2)
+{
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+
+    if (i < N0) {
+      ptr0[i] = val0;
+    } 
+    else if (i < N0+N1) {
+      i -= N0;
+      ptr1[i] = val1;
+    }
+    else if (i < N0+N1+N2) {
+      i -= N0+N1;
+      ptr2[i] = val2;
+    }
+}
+
+template <typename T0, typename T1, typename T2, typename T3>
+__global__
+void rajaCudaMemsetType(T0* ptr0, T0 val0, int N0,
+                        T1* ptr1, T1 val1, int N1,
+                        T2* ptr2, T2 val2, int N2,
+                        T3* ptr3, T3 val3, int N3)
+{
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+
+    if (i < N0) {
+      ptr0[i] = val0;
+    } 
+    else if (i < N0+N1) {
+      i -= N0;
+      ptr1[i] = val1;
+    }
+    else if (i < N0+N1+N2) {
+      i -= N0+N1;
+      ptr2[i] = val2;
+    }
+    else if (i < N0+N1+N2+N3) {
+      i -= N0+N1+N2;
+      ptr3[i] = val3;
+    }
+}
+
 
 //
 //////////////////////////////////////////////////////////////////////
@@ -356,8 +437,11 @@ public:
     m_reduced_val = init_val;
     m_myID = getCudaReductionId();
     m_tallydata = getCudaReductionTallyBlock(m_myID);
-    m_tallydata->tally = init_val;
-    m_tallydata->initVal = init_val;
+
+    rajaCudaMemsetType<CudaReductionBlockDataType, CudaReductionBlockDataType>
+      <<<2, 1>>>
+      ( &m_tallydata->tally, init_val, 1,
+        &m_tallydata->initVal, init_val, 1 );
   }
 
   //
@@ -512,8 +596,11 @@ public:
     m_reduced_val = init_val;
     m_myID = getCudaReductionId();
     m_tallydata = getCudaReductionTallyBlock(m_myID);
-    m_tallydata->tally = init_val;
-    m_tallydata->initVal = init_val;
+
+    rajaCudaMemsetType<CudaReductionBlockDataType, CudaReductionBlockDataType>
+      <<<2, 1>>>
+      ( &m_tallydata->tally, init_val, 1,
+        &m_tallydata->initVal, init_val, 1 );
   }
 
   //
@@ -665,27 +752,19 @@ public:
   explicit ReduceSum(T init_val)
   {
     m_is_copy = false;
-
     m_init_val = init_val;
     m_reduced_val = static_cast<T>(0);
-
     m_myID = getCudaReductionId();
-    //    std::cout << "ReduceSum id = " << m_myID << std::endl;
-
     m_blockdata = getCudaReductionMemBlock(m_myID);
+    m_max_grid_size = m_blockdata;
     m_blockoffset = 1;
 
     // Entire global shared memory block must be initialized to zero so
     // sum reduction is correct.
-    size_t len = RAJA_CUDA_REDUCE_BLOCK_LENGTH;
-    cudaErrchk(cudaMemset(&m_blockdata[m_blockoffset],
-                          0,
-                          sizeof(CudaReductionBlockDataType) * len));
-
-    m_max_grid_size = m_blockdata;
-    m_max_grid_size[0] = 0;
-
-    cudaErrchk(cudaDeviceSynchronize());
+    rajaCudaMemsetType<CudaReductionBlockDataType, CudaReductionBlockDataType>
+      <<<((1+RAJA_CUDA_REDUCE_BLOCK_LENGTH+BLOCK_SIZE-1)/BLOCK_SIZE),BLOCK_SIZE>>>
+      ( &m_max_grid_size[0], static_cast<T>(0), 1,
+        &m_blockdata[m_blockoffset], static_cast<T>(0), RAJA_CUDA_REDUCE_BLOCK_LENGTH );
   }
 
   //
@@ -853,8 +932,11 @@ public:
     m_init_val = init_val;
     m_myID = getCudaReductionId();
     m_tallydata = getCudaReductionTallyBlock(m_myID);
-    m_tallydata->tally = static_cast<T>(0);
-    m_tallydata->initVal = init_val;
+
+    rajaCudaMemsetType<CudaReductionBlockDataType, CudaReductionBlockDataType>
+      <<<2, 1>>>
+      ( &m_tallydata->tally, static_cast<T>(0), 1,
+        &m_tallydata->initVal, init_val, 1 );
   }
 
   //
@@ -1010,21 +1092,26 @@ public:
     m_reduced_val = init_val;
     m_reduced_idx = init_loc;
     m_myID = getCudaReductionId();
-    retiredBlocks[m_myID] = 0;
     m_blockdata = getCudaReductionLocMemBlock(m_myID);
     // we're adding max grid size calculation for an assert check in the
     // accessor
     m_max_grid_size = m_blockdata;
-    m_max_grid_size[0].val = 0;
     m_blockoffset = 1;
-    m_blockdata[m_blockoffset].val = init_val;
-    m_blockdata[m_blockoffset].idx = init_loc;
 
-    for (int j = 1; j <= RAJA_CUDA_REDUCE_BLOCK_LENGTH; ++j) {
-      m_blockdata[m_blockoffset + j].val = init_val;
-      m_blockdata[m_blockoffset + j].idx = init_loc;
-    }
-    cudaErrchk(cudaDeviceSynchronize());
+    CudaReductionLocBlockDataType tmp_zero;
+    tmp_zero.val = 0;
+    tmp_zero.idx = 0;
+
+    CudaReductionLocBlockDataType tmp_init;
+    tmp_init.val = init_val;
+    tmp_init.idx = init_loc;
+
+    rajaCudaMemsetType<CudaReductionLocBlockDataType, CudaReductionLocBlockDataType, CudaReductionLocBlockDataType, unsigned int>
+      <<<((1+1+RAJA_CUDA_REDUCE_BLOCK_LENGTH+1+BLOCK_SIZE-1)/BLOCK_SIZE), BLOCK_SIZE>>>
+      ( &m_max_grid_size[0], tmp_zero, 1,
+        &m_blockdata[m_blockoffset], tmp_init, 1,
+        &m_blockdata[m_blockoffset+1], tmp_init, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
+        &retiredBlocks[m_myID], 0, 1 );
   }
 
   //
@@ -1264,21 +1351,26 @@ public:
     m_reduced_val = init_val;
     m_reduced_idx = init_loc;
     m_myID = getCudaReductionId();
-    retiredBlocks[m_myID] = 0;
     m_blockdata = getCudaReductionLocMemBlock(m_myID);
     // we're adding max grid size calculation for an assert check in the
     // accessor
     m_max_grid_size = m_blockdata;
-    m_max_grid_size[0].val = 0;
     m_blockoffset = 1;
-    m_blockdata[m_blockoffset].val = init_val;
-    m_blockdata[m_blockoffset].idx = init_loc;
 
-    for (int j = 1; j <= RAJA_CUDA_REDUCE_BLOCK_LENGTH; ++j) {
-      m_blockdata[m_blockoffset + j].val = init_val;
-      m_blockdata[m_blockoffset + j].idx = init_loc;
-    }
-    cudaErrchk(cudaDeviceSynchronize());
+    CudaReductionLocBlockDataType tmp_zero;
+    tmp_zero.val = 0;
+    tmp_zero.idx = 0;
+
+    CudaReductionLocBlockDataType tmp_init;
+    tmp_init.val = init_val;
+    tmp_init.idx = init_loc;
+
+    rajaCudaMemsetType<CudaReductionLocBlockDataType, CudaReductionLocBlockDataType, CudaReductionLocBlockDataType, unsigned int>
+      <<<((1+1+RAJA_CUDA_REDUCE_BLOCK_LENGTH+1+BLOCK_SIZE-1)/BLOCK_SIZE), BLOCK_SIZE>>>
+      ( &m_max_grid_size[0], tmp_zero, 1,
+        &m_blockdata[m_blockoffset], tmp_init, 1,
+        &m_blockdata[m_blockoffset+1], tmp_init, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
+        &retiredBlocks[m_myID], 0, 1 );
   }
 
   //
