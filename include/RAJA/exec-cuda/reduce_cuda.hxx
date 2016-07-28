@@ -1265,6 +1265,13 @@ public:
     return m_reduced_val.tally.idx;
   }
 
+  CudaReductionLocType<T> getMinLoc()
+  {
+    cudaErrchk(cudaDeviceSynchronize());
+    m_reduced_val = *m_tallydata;
+    return m_reduced_val.tally;
+  }
+
   //
   // Method that updates min and index values in proper device memory block
   // locations.
@@ -1511,6 +1518,13 @@ public:
     cudaErrchk(cudaDeviceSynchronize());
     m_reduced_val = *m_tallydata;
     return m_reduced_val.tally.idx;
+  }
+
+  CudaReductionLocType<T> getMaxLoc()
+  {
+    cudaErrchk(cudaDeviceSynchronize());
+    m_reduced_val = *m_tallydata;
+    return m_reduced_val.tally;
   }
 
   //
