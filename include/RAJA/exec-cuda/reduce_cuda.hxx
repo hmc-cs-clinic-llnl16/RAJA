@@ -111,6 +111,24 @@ __device__ __forceinline__ double shfl_xor(double var, int laneMask)
 #define double_to_ull(x) __double_as_longlong(x)
 #endif
 
+template<typename T>
+__device__ inline void _atomicMin(T* address, T value)
+{
+  atomicMin(address, value);
+}
+
+template<typename T>
+__device__ inline void _atomicMax(T* address, T value)
+{
+  atomicMax(address, value);
+}
+
+template<typename T>
+__device__ inline void _atomicAdd(T* address, T value)
+{
+  atomicAdd(address, value);
+}
+
 #if defined(RAJA_USE_ATOMIC_ONE)
 /*!
  ******************************************************************************
@@ -120,7 +138,8 @@ __device__ __forceinline__ double shfl_xor(double var, int laneMask)
  *
  ******************************************************************************
  */
-__device__ inline void atomicMin(double *address, double value)
+template<>
+__device__ inline void _atomicMin(double *address, double value)
 {
   double temp = *(reinterpret_cast<double volatile *>(address));
   if (temp > value) {
@@ -136,9 +155,9 @@ __device__ inline void atomicMin(double *address, double value)
     }
   }
 }
-
 ///
-__device__ inline void atomicMin(float *address, double value)
+ template<>
+__device__ inline void _atomicMin(float *address, float value)
 {
   float temp = *(reinterpret_cast<float volatile *>(address));
   if (temp > value) {
@@ -153,9 +172,9 @@ __device__ inline void atomicMin(float *address, double value)
     }
   }
 }
-
 ///
-__device__ inline void atomicMax(double *address, double value)
+template<>
+__device__ inline void _atomicMax(double *address, double value)
 {
   double temp = *(reinterpret_cast<double volatile *>(address));
   if (temp < value) {
@@ -171,9 +190,9 @@ __device__ inline void atomicMax(double *address, double value)
     }
   }
 }
-
 ///
-__device__ inline void atomicMax(float *address, double value)
+template<>
+__device__ inline void _atomicMax(float *address, float value)
 {
   float temp = *(reinterpret_cast<float volatile *>(address));
   if (temp < value) {
@@ -188,11 +207,51 @@ __device__ inline void atomicMax(float *address, double value)
     }
   }
 }
+#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 350
+/// don't specialize for 64-bit min/max if they exist
+#else
+/// implement 64-bit min/max if they don't exist
+template<>
+__device__ inline void _atomicMin(unsigned long long int *address, unsigned long long int value)
+{
+  unsigned long long int temp = *(reinterpret_cast<unsigned long long int volatile *>(address));
+  if (temp > value) {
+    unsigned long long int oldval, newval;
+    oldval = temp;
+    newval = value;
+
+    while ((readback = atomicCAS(address, oldval, newval)) != oldval) {
+      oldval = readback;
+      newval = RAJA_MIN(oldval, value);
+    }
+  }
+  return readback;
+}
+///
+template<>
+__device__ inline void _atomicMax(unsigned long long int *address, unsigned long long int value)
+{
+  unsigned long long int readback = *(reinterpret_cast<unsigned long long int volatile *>(address));
+  if (readback < value) {
+    unsigned long long int oldval, newval;
+    oldval = readback;
+    newval = value;
+
+    while ((readback = atomicCAS(address, oldval, newval)) != oldval) {
+      oldval = readback;
+      newval = RAJA_MAX(oldval, value);
+    }
+  }
+  return readback;
+}
+#endif
 
 #if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
+/// don't specialize for 64-bit add if it exists
 #else
 ///
-__device__ inline void atomicAdd(double *address, double value)
+template<>
+__device__ inline void _atomicAdd(double *address, double value)
 {
   unsigned long long oldval, newval, readback;
 
@@ -204,7 +263,6 @@ __device__ inline void atomicAdd(double *address, double value)
     newval = __double_as_longlong(__longlong_as_double(oldval) + value);
   }
 }
-
 #endif
 
 #elif defined(RAJA_USE_ATOMIC_TWO)
@@ -219,7 +277,8 @@ __device__ inline void atomicAdd(double *address, double value)
  *
  ******************************************************************************
  */
-__device__ inline void atomicMin(double *address, double value)
+template<>
+__device__ inline void _atomicMin(double *address, double value)
 {
   double temp = *(reinterpret_cast<double volatile *>(address));
   if (temp > value) {
@@ -237,9 +296,9 @@ __device__ inline void atomicMin(double *address, double value)
     } while (assumed != oldval);
   }
 }
-
 ///
-__device__ inline void atomicMin(float *address, float value)
+template<>
+__device__ inline void _atomicMin(float *address, float value)
 {
   float temp = *(reinterpret_cast<float volatile *>(address));
   if (temp > value) {
@@ -255,9 +314,9 @@ __device__ inline void atomicMin(float *address, float value)
     } while (assumed != oldval);
   }
 }
-
 ///
-__device__ inline void atomicMax(double *address, double value)
+template<>
+__device__ inline void _atomicMax(double *address, double value)
 {
   double temp = *(reinterpret_cast<double volatile *>(address));
   if (temp < value) {
@@ -275,9 +334,9 @@ __device__ inline void atomicMax(double *address, double value)
     } while (assumed != oldval);
   }
 }
-
 ///
-__device__ inline void atomicMax(float *address, float value)
+template<>
+__device__ inline void _atomicMax(float *address, float value)
 {
   float temp = *(reinterpret_cast<float volatile *>(address));
   if (temp < value) {
@@ -294,10 +353,51 @@ __device__ inline void atomicMax(float *address, float value)
   }
 }
 
-#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
+#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 350
+/// don't specialize for 64-bit min/max if they exist
 #else
 ///
-__device__ inline void atomicAdd(double *address, double value)
+template<>
+__device__ inline void _atomicMin(unsigned long long int *address, unsigned long long int value)
+{
+  unsigned long long int temp = *(reinterpret_cast<unsigned long long int volatile *>(address));
+  if (temp > value) {
+    unsigned long long int assumed;
+    unsigned long long int oldval = temp;
+    do {
+      assumed = oldval;
+      oldval =
+          atomicCAS(address,
+                    assumed,
+                    RAJA_MIN(assumed, value));
+    } while (assumed != oldval);
+  }
+}
+///
+template<>
+__device__ inline void _atomicMax(unsigned long long int *address, unsigned long long int value)
+{
+  unsigned long long int temp = *(reinterpret_cast<unsigned long long int volatile *>(address));
+  if (temp < value) {
+    unsigned long long int assumed;
+    unsigned long long int oldval = temp;
+    do {
+      assumed = oldval;
+      oldval =
+          atomicCAS(address,
+                    assumed,
+                    RAJA_MAX(assumed, value));
+    } while (assumed != oldval);
+  }
+}
+#endif
+
+#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
+/// don't specialize for doubles if they exist
+#else
+///
+template<>
+__device__ inline void _atomicAdd(double *address, double value)
 {
   unsigned long long int *address_as_ull = (unsigned long long int *)address;
   unsigned long long int oldval = *address_as_ull, assumed;
@@ -310,7 +410,6 @@ __device__ inline void atomicAdd(double *address, double value)
                   __double_as_longlong(__longlong_as_double(oldval) + value));
   } while (assumed != oldval);
 }
-
 #endif
 
 #elif defined(RAJA_USE_NO_ATOMICS)
@@ -352,8 +451,7 @@ void rajaCudaMemsetType(T0* ptr0, T0 val0, int N0,
     if (i < N0) {
       ptr0[i] = val0;
     } else if (i < N0+N1) {
-      i -= N0;
-      ptr1[i] = val1;
+      ptr1[i-N0] = val1;
     }
 }
 
@@ -369,12 +467,10 @@ void rajaCudaMemsetType(T0* ptr0, T0 val0, int N0,
       ptr0[i] = val0;
     } 
     else if (i < N0+N1) {
-      i -= N0;
-      ptr1[i] = val1;
+      ptr1[i-N0] = val1;
     }
     else if (i < N0+N1+N2) {
-      i -= N0+N1;
-      ptr2[i] = val2;
+      ptr2[i-(N0+N1)] = val2;
     }
 }
 
@@ -391,16 +487,13 @@ void rajaCudaMemsetType(T0* ptr0, T0 val0, int N0,
       ptr0[i] = val0;
     } 
     else if (i < N0+N1) {
-      i -= N0;
-      ptr1[i] = val1;
+      ptr1[i-N0] = val1;
     }
     else if (i < N0+N1+N2) {
-      i -= N0+N1;
-      ptr2[i] = val2;
+      ptr2[i-(N0+N1)] = val2;
     }
     else if (i < N0+N1+N2+N3) {
-      i -= N0+N1+N2;
-      ptr3[i] = val3;
+      ptr3[i-(N0+N1+N2)] = val3;
     }
 }
 
@@ -436,9 +529,9 @@ public:
     m_is_copy = false;
     m_reduced_val = init_val;
     m_myID = getCudaReductionId();
-    m_tallydata = getCudaReductionTallyBlock(m_myID);
+    m_tallydata = static_cast<CudaReductionTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
 
-    rajaCudaMemsetType<CudaReductionBlockDataType, CudaReductionBlockDataType>
+    rajaCudaMemsetType<T, T>
       <<<2, 1>>>
       ( &m_tallydata->tally, init_val, 1,
         &m_tallydata->initVal, init_val, 1 );
@@ -478,7 +571,7 @@ public:
   operator T()
   {
     cudaErrchk(cudaDeviceSynchronize());
-    m_reduced_val = static_cast<T>(m_tallydata->tally);
+    m_reduced_val = m_tallydata->tally;
     return m_reduced_val;
   }
 
@@ -543,7 +636,7 @@ public:
 
     if (threadId < 1) {
       sd[0] = RAJA_MIN(sd[0], sd[1]);
-      atomicMin(&(m_tallydata->tally), sd[0]);
+      _atomicMin<T>(&(m_tallydata->tally), sd[0]);
     }
 
     return *this;
@@ -561,15 +654,20 @@ private:
 
   T m_reduced_val;
 
-  CudaReductionBlockTallyType *m_tallydata;
+  CudaReductionTallyType<T> *m_tallydata;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
   static constexpr bool reasonableRangeCheck =
       ((BLOCK_SIZE >= 32) && (BLOCK_SIZE <= 1024));
+  static constexpr bool sizeofcheck = 
+      (  (sizeof(T) <= sizeof(CudaReductionDummyDataType))
+      && (sizeof(CudaReductionTallyType<T>) <= sizeof(CudaReductionDummyTallyType))
+      && (sizeof(CudaReductionBlockType<T>) <= sizeof(CudaReductionDummyBlockType)));
   static_assert(powerOfTwoCheck, "Error: block sizes must be a power of 2");
   static_assert(reasonableRangeCheck,
                 "Error: block sizes must be between 32 and 1024");
+  static_assert(sizeofcheck, "Error: type must be of size <= " MACROSTR(RAJA_CUDA_REDUCE_VAR_MAXSIZE));
 };
 
 /*!
@@ -595,9 +693,9 @@ public:
     m_is_copy = false;
     m_reduced_val = init_val;
     m_myID = getCudaReductionId();
-    m_tallydata = getCudaReductionTallyBlock(m_myID);
+    m_tallydata = static_cast<CudaReductionTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
 
-    rajaCudaMemsetType<CudaReductionBlockDataType, CudaReductionBlockDataType>
+    rajaCudaMemsetType<T, T>
       <<<2, 1>>>
       ( &m_tallydata->tally, init_val, 1,
         &m_tallydata->initVal, init_val, 1 );
@@ -637,7 +735,7 @@ public:
   operator T()
   {
     cudaErrchk(cudaDeviceSynchronize());
-    m_reduced_val = static_cast<T>(m_tallydata->tally);
+    m_reduced_val = m_tallydata->tally;
     return m_reduced_val;
   }
 
@@ -702,7 +800,7 @@ public:
 
     if (threadId < 1) {
       sd[0] = RAJA_MAX(sd[0], sd[1]);
-      atomicMax(&(m_tallydata->tally), sd[0]);
+      _atomicMax<T>(&(m_tallydata->tally), sd[0]);
     }
 
     return *this;
@@ -720,15 +818,20 @@ private:
 
   T m_reduced_val;
 
-  CudaReductionBlockTallyType *m_tallydata;
+  CudaReductionTallyType<T> *m_tallydata;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
   static constexpr bool reasonableRangeCheck =
       ((BLOCK_SIZE >= 32) && (BLOCK_SIZE <= 1024));
+  static constexpr bool sizeofcheck = 
+      (  (sizeof(T) <= sizeof(CudaReductionDummyDataType))
+      && (sizeof(CudaReductionTallyType<T>) <= sizeof(CudaReductionDummyTallyType))
+      && (sizeof(CudaReductionBlockType<T>) <= sizeof(CudaReductionDummyBlockType)));
   static_assert(powerOfTwoCheck, "Error: block sizes must be a power of 2");
   static_assert(reasonableRangeCheck,
                 "Error: block sizes must be between 32 and 1024");
+  static_assert(sizeofcheck, "Error: type must be of size <= " MACROSTR(RAJA_CUDA_REDUCE_VAR_MAXSIZE));
 };
 
 /*!
@@ -755,16 +858,14 @@ public:
     m_init_val = init_val;
     m_reduced_val = static_cast<T>(0);
     m_myID = getCudaReductionId();
-    m_blockdata = getCudaReductionMemBlock(m_myID);
-    m_max_grid_size = m_blockdata;
-    m_blockoffset = 1;
+    m_blockdata = static_cast<CudaReductionBlockType<T>*>(getCudaReductionMemBlock(m_myID));
 
     // Entire global shared memory block must be initialized to zero so
     // sum reduction is correct.
-    rajaCudaMemsetType<CudaReductionBlockDataType, CudaReductionBlockDataType>
+    rajaCudaMemsetType<GridSizeType, T>
       <<<((1+RAJA_CUDA_REDUCE_BLOCK_LENGTH+BLOCK_SIZE-1)/BLOCK_SIZE),BLOCK_SIZE>>>
-      ( &m_max_grid_size[0], static_cast<T>(0), 1,
-        &m_blockdata[m_blockoffset], static_cast<T>(0), RAJA_CUDA_REDUCE_BLOCK_LENGTH );
+      ( &m_blockdata->maxGridSize, static_cast<GridSizeType>(0), 1,
+        &m_blockdata->values[0], static_cast<T>(0), RAJA_CUDA_REDUCE_BLOCK_LENGTH );
   }
 
   //
@@ -802,14 +903,14 @@ public:
   {
     cudaErrchk(cudaDeviceSynchronize());
 
-    m_blockdata[m_blockoffset] = static_cast<T>(0);
+    m_blockdata->reducedValue = static_cast<T>(0);
 
-    size_t grid_size = m_max_grid_size[0];
+    size_t grid_size = m_blockdata->maxGridSize;
     assert(grid_size < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
-    for (size_t i = 1; i <= grid_size; ++i) {
-      m_blockdata[m_blockoffset] += m_blockdata[m_blockoffset + i];
+    for (size_t i = 0; i < grid_size; ++i) {
+      m_blockdata->reducedValue += m_blockdata->values[i];
     }
-    m_reduced_val = m_init_val + static_cast<T>(m_blockdata[m_blockoffset]);
+    m_reduced_val = m_init_val + m_blockdata->reducedValue;
 
     return m_reduced_val;
   }
@@ -838,8 +939,8 @@ public:
                    + (blockDim.x * blockDim.y) * threadIdx.z;
 
     if (blockId + threadId == 0) {
-      m_max_grid_size[0] =
-          RAJA_MAX(gridDim.x * gridDim.y * gridDim.z, m_max_grid_size[0]);
+      m_blockdata->maxGridSize =
+          RAJA_MAX(gridDim.x * gridDim.y * gridDim.z, m_blockdata->maxGridSize);
     }
 
     // initialize shared memory
@@ -847,7 +948,7 @@ public:
       // this descends all the way to 1
       if (threadId < i) {
         // no need for __syncthreads()
-        sd[threadId + i] = m_reduced_val;
+        sd[threadId + i] = static_cast<T>(0);
       }
     }
     __syncthreads();
@@ -871,10 +972,9 @@ public:
       }
     }
 
-    // one thread adds to gmem, we skip m_blockdata[m_blockoffset]
-    // because we will be accumlating into this
+    // one thread adds to gmem
     if (threadId == 0) {
-      m_blockdata[m_blockoffset + blockId + 1] += temp;
+      m_blockdata->values[blockId] += temp;
     }
 
     return *this;
@@ -892,18 +992,20 @@ private:
   T m_init_val;
   T m_reduced_val;
 
-  CudaReductionBlockDataType *m_blockdata;
-  int m_blockoffset;
-
-  CudaReductionBlockDataType *m_max_grid_size;
+  CudaReductionBlockType<T> *m_blockdata;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
   static constexpr bool reasonableRangeCheck =
       ((BLOCK_SIZE >= 32) && (BLOCK_SIZE <= 1024));
+  static constexpr bool sizeofcheck = 
+      (  (sizeof(T) <= sizeof(CudaReductionDummyDataType))
+      && (sizeof(CudaReductionTallyType<T>) <= sizeof(CudaReductionDummyTallyType))
+      && (sizeof(CudaReductionBlockType<T>) <= sizeof(CudaReductionDummyBlockType)));
   static_assert(powerOfTwoCheck, "Error: block sizes must be a power of 2");
   static_assert(reasonableRangeCheck,
                 "Error: block sizes must be between 32 and 1024");
+  static_assert(sizeofcheck, "Error: type must be of size <= " MACROSTR(RAJA_CUDA_REDUCE_VAR_MAXSIZE));
 };
 
 /*!
@@ -931,9 +1033,9 @@ public:
     m_reduced_val = static_cast<T>(0);
     m_init_val = init_val;
     m_myID = getCudaReductionId();
-    m_tallydata = getCudaReductionTallyBlock(m_myID);
+    m_tallydata = static_cast<CudaReductionTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
 
-    rajaCudaMemsetType<CudaReductionBlockDataType, CudaReductionBlockDataType>
+    rajaCudaMemsetType<T, T>
       <<<2, 1>>>
       ( &m_tallydata->tally, static_cast<T>(0), 1,
         &m_tallydata->initVal, init_val, 1 );
@@ -973,7 +1075,7 @@ public:
   operator T()
   {
     cudaDeviceSynchronize();
-    m_reduced_val = m_init_val + static_cast<T>(m_tallydata->tally);
+    m_reduced_val = m_init_val + m_tallydata->tally;
     return m_reduced_val;
   }
 
@@ -1003,7 +1105,7 @@ public:
       // this descends all the way to 1
       if (threadId < i) {
         // no need for __syncthreads()
-        sd[threadId + i] = m_reduced_val;
+        sd[threadId + i] = static_cast<T>(0);
       }
     }
     __syncthreads();
@@ -1029,7 +1131,7 @@ public:
 
     // one thread adds to tally
     if (threadId == 0) {
-      atomicAdd(&(m_tallydata->tally), temp);
+      _atomicAdd<T>(&(m_tallydata->tally), temp);
     }
 
     return *this;
@@ -1048,15 +1150,20 @@ private:
   T m_init_val;
   T m_reduced_val;
 
-  CudaReductionBlockTallyType *m_tallydata;
+  CudaReductionTallyType<T> *m_tallydata;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
   static constexpr bool reasonableRangeCheck =
       ((BLOCK_SIZE >= 32) && (BLOCK_SIZE <= 1024));
+  static constexpr bool sizeofcheck = 
+      (  (sizeof(T) <= sizeof(CudaReductionDummyDataType))
+      && (sizeof(CudaReductionTallyType<T>) <= sizeof(CudaReductionDummyTallyType))
+      && (sizeof(CudaReductionBlockType<T>) <= sizeof(CudaReductionDummyBlockType)));
   static_assert(powerOfTwoCheck, "Error: block sizes must be a power of 2");
   static_assert(reasonableRangeCheck,
                 "Error: block sizes must be between 32 and 1024");
+  static_assert(sizeofcheck, "Error: type must be of size <= " MACROSTR(RAJA_CUDA_REDUCE_VAR_MAXSIZE));
 };
 
 ///
@@ -1066,7 +1173,7 @@ private:
 /// do not use atomics and require a finishing stage performed
 /// by the last block.
 ///
-__device__ __managed__ unsigned int retiredBlocks[RAJA_MAX_REDUCE_VARS];
+__device__ __managed__ GridSizeType retiredBlocks[RAJA_MAX_REDUCE_VARS];
 
 /*!
  ******************************************************************************
@@ -1092,26 +1199,18 @@ public:
     m_reduced_val = init_val;
     m_reduced_idx = init_loc;
     m_myID = getCudaReductionId();
-    m_blockdata = getCudaReductionLocMemBlock(m_myID);
-    // we're adding max grid size calculation for an assert check in the
-    // accessor
-    m_max_grid_size = m_blockdata;
-    m_blockoffset = 1;
+    m_blockdata = static_cast<CudaReductionLocBlockType<T>*>(getCudaReductionMemBlock(m_myID));
 
-    CudaReductionLocBlockDataType tmp_zero;
-    tmp_zero.val = 0;
-    tmp_zero.idx = 0;
-
-    CudaReductionLocBlockDataType tmp_init;
+    CudaReductionLocType<T> tmp_init;
     tmp_init.val = init_val;
     tmp_init.idx = init_loc;
 
-    rajaCudaMemsetType<CudaReductionLocBlockDataType, CudaReductionLocBlockDataType, CudaReductionLocBlockDataType, unsigned int>
+    rajaCudaMemsetType<GridSizeType, CudaReductionLocType<T>, CudaReductionLocType<T>, GridSizeType>
       <<<((1+1+RAJA_CUDA_REDUCE_BLOCK_LENGTH+1+BLOCK_SIZE-1)/BLOCK_SIZE), BLOCK_SIZE>>>
-      ( &m_max_grid_size[0], tmp_zero, 1,
-        &m_blockdata[m_blockoffset], tmp_init, 1,
-        &m_blockdata[m_blockoffset+1], tmp_init, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
-        &retiredBlocks[m_myID], 0, 1 );
+      ( &m_blockdata->maxGridSize, static_cast<GridSizeType>(0), 1,
+        &m_blockdata->reducedValue, tmp_init, 1,
+        &m_blockdata->values[0], tmp_init, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
+        &retiredBlocks[m_myID], static_cast<GridSizeType>(0), 1 );
   }
 
   //
@@ -1148,9 +1247,9 @@ public:
   operator T()
   {
     cudaErrchk(cudaDeviceSynchronize());
-    size_t grid_size = m_max_grid_size[0].val;
+    size_t grid_size = m_blockdata->maxGridSize;
     assert(grid_size < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
-    m_reduced_val = static_cast<T>(m_blockdata[m_blockoffset].val);
+    m_reduced_val = m_blockdata->reducedValue.val;
     return m_reduced_val;
   }
 
@@ -1169,7 +1268,7 @@ public:
   Index_type getLoc()
   {
     cudaErrchk(cudaDeviceSynchronize());
-    m_reduced_idx = m_blockdata[m_blockoffset].idx;
+    m_reduced_idx = m_blockdata->reducedValue.idx;
     return m_reduced_idx;
   }
 
@@ -1183,7 +1282,7 @@ public:
       T val,
       Index_type idx) const
   {
-    __shared__ CudaReductionLocBlockDataType sd[BLOCK_SIZE];
+    __shared__ CudaReductionLocType<T> sd[BLOCK_SIZE];
     __shared__ bool lastBlock;
 
     int blockId = blockIdx.x + blockIdx.y * gridDim.x
@@ -1192,8 +1291,8 @@ public:
                    + (blockDim.x * blockDim.y) * threadIdx.z;
 
     if (blockId + threadId == 0) {
-      m_max_grid_size[0].val =
-          RAJA_MAX(gridDim.x * gridDim.y * gridDim.z, m_max_grid_size[0].val);
+      m_blockdata->maxGridSize =
+          RAJA_MAX(gridDim.x * gridDim.y * gridDim.z, m_blockdata->maxGridSize);
     }
 
     // initialize shared memory
@@ -1241,25 +1340,23 @@ public:
     if (threadId < 1) {
       lastBlock = false;
       sd[threadId] = RAJA_MINLOC(sd[threadId], sd[threadId + 1]);
-      m_blockdata[m_blockoffset + blockId + 1] =
-          RAJA_MINLOC(sd[threadId], m_blockdata[m_blockoffset + blockId + 1]);
+      m_blockdata->values[blockId] = RAJA_MINLOC(sd[threadId], m_blockdata->values[blockId]);
       __threadfence();
-      unsigned int oldBlockCount =
-          ::atomicAdd((unsigned int *)&retiredBlocks[m_myID], (unsigned int)1);
-      lastBlock = (oldBlockCount == ((gridDim.x * gridDim.y * gridDim.z) - 1));
+      unsigned int oldBlockCount = atomicAdd((unsigned int*)&retiredBlocks[m_myID], (unsigned int)1); // use atomicInc instead
+      lastBlock = (oldBlockCount == ((gridDim.x * gridDim.y * gridDim.z)- 1));
     }
     __syncthreads();
 
     if (lastBlock) {
       if (threadId == 0) {
-        retiredBlocks[m_myID] = 0;
+        retiredBlocks[m_myID] = 0; // not necessary if using atomicInc
       }
 
-      CudaReductionLocBlockDataType lmin = {m_reduced_val, m_reduced_idx};
+      CudaReductionLocType<T> lmin = {m_reduced_val, m_reduced_idx};
       int blocks = gridDim.x * gridDim.y * gridDim.z;
       int threads = blockDim.x * blockDim.y * blockDim.z;
       for (int i = threadId; i < blocks; i += threads) {
-        lmin = RAJA_MINLOC(lmin, m_blockdata[m_blockoffset + i + 1]);
+        lmin = RAJA_MINLOC(lmin, m_blockdata->values[i]);
       }
       sd[threadId] = lmin;
       __syncthreads();
@@ -1293,8 +1390,8 @@ public:
 
       if (threadId < 1) {
         sd[threadId] = RAJA_MINLOC(sd[threadId], sd[threadId + 1]);
-        m_blockdata[m_blockoffset] =
-            RAJA_MINLOC(m_blockdata[m_blockoffset], sd[threadId]);
+        m_blockdata->reducedValue =
+            RAJA_MINLOC(m_blockdata->reducedValue, sd[threadId]);
       }
     }
     return *this;
@@ -1309,22 +1406,24 @@ private:
   bool m_is_copy;
 
   int m_myID;
-  int m_blockoffset;
 
   T m_reduced_val;
-
   Index_type m_reduced_idx;
 
-  CudaReductionLocBlockDataType *m_blockdata;
-  CudaReductionLocBlockDataType *m_max_grid_size;
+  CudaReductionLocBlockType<T> *m_blockdata;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
   static constexpr bool reasonableRangeCheck =
       ((BLOCK_SIZE >= 32) && (BLOCK_SIZE <= 1024));
+  static constexpr bool sizeofcheck = 
+      (  (sizeof(T) <= sizeof(CudaReductionDummyDataType))
+      && (sizeof(CudaReductionLocTallyType<T>) <= sizeof(CudaReductionDummyTallyType))
+      && (sizeof(CudaReductionLocBlockType<T>) <= sizeof(CudaReductionDummyBlockType)));
   static_assert(powerOfTwoCheck, "Error: block sizes must be a power of 2");
   static_assert(reasonableRangeCheck,
                 "Error: block sizes must be between 32 and 1024");
+  static_assert(sizeofcheck, "Error: type must be of size <= " MACROSTR(RAJA_CUDA_REDUCE_VAR_MAXSIZE));
 };
 
 /*!
@@ -1351,26 +1450,18 @@ public:
     m_reduced_val = init_val;
     m_reduced_idx = init_loc;
     m_myID = getCudaReductionId();
-    m_blockdata = getCudaReductionLocMemBlock(m_myID);
-    // we're adding max grid size calculation for an assert check in the
-    // accessor
-    m_max_grid_size = m_blockdata;
-    m_blockoffset = 1;
+    m_blockdata = static_cast<CudaReductionLocBlockType<T>*>(getCudaReductionMemBlock(m_myID));
 
-    CudaReductionLocBlockDataType tmp_zero;
-    tmp_zero.val = 0;
-    tmp_zero.idx = 0;
-
-    CudaReductionLocBlockDataType tmp_init;
+    CudaReductionLocType<T> tmp_init;
     tmp_init.val = init_val;
     tmp_init.idx = init_loc;
 
-    rajaCudaMemsetType<CudaReductionLocBlockDataType, CudaReductionLocBlockDataType, CudaReductionLocBlockDataType, unsigned int>
+    rajaCudaMemsetType<GridSizeType, CudaReductionLocType<T>, CudaReductionLocType<T>, GridSizeType>
       <<<((1+1+RAJA_CUDA_REDUCE_BLOCK_LENGTH+1+BLOCK_SIZE-1)/BLOCK_SIZE), BLOCK_SIZE>>>
-      ( &m_max_grid_size[0], tmp_zero, 1,
-        &m_blockdata[m_blockoffset], tmp_init, 1,
-        &m_blockdata[m_blockoffset+1], tmp_init, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
-        &retiredBlocks[m_myID], 0, 1 );
+      ( &m_blockdata->maxGridSize, static_cast<GridSizeType>(0), 1,
+        &m_blockdata->reducedValue, tmp_init, 1,
+        &m_blockdata->values[0], tmp_init, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
+        &retiredBlocks[m_myID], static_cast<GridSizeType>(0), 1 );
   }
 
   //
@@ -1407,9 +1498,9 @@ public:
   operator T()
   {
     cudaErrchk(cudaDeviceSynchronize());
-    size_t grid_size = m_max_grid_size[0].val;
+    size_t grid_size = m_blockdata->maxGridSize;
     assert(grid_size < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
-    m_reduced_val = static_cast<T>(m_blockdata[m_blockoffset].val);
+    m_reduced_val = m_blockdata->reducedValue.val;
     return m_reduced_val;
   }
 
@@ -1428,7 +1519,7 @@ public:
   Index_type getLoc()
   {
     cudaErrchk(cudaDeviceSynchronize());
-    m_reduced_idx = m_blockdata[m_blockoffset].idx;
+    m_reduced_idx = m_blockdata->reducedValue.idx;
     return m_reduced_idx;
   }
 
@@ -1442,7 +1533,7 @@ public:
       T val,
       Index_type idx) const
   {
-    __shared__ CudaReductionLocBlockDataType sd[BLOCK_SIZE];
+    __shared__ CudaReductionLocType<T> sd[BLOCK_SIZE];
     __shared__ bool lastBlock;
 
     int blockId = blockIdx.x + blockIdx.y * gridDim.x
@@ -1451,8 +1542,8 @@ public:
                    + (blockDim.x * blockDim.y) * threadIdx.z;
 
     if (blockId + threadId == 0) {
-      m_max_grid_size[0].val =
-          RAJA_MAX(gridDim.x * gridDim.y * gridDim.z, m_max_grid_size[0].val);
+      m_blockdata->maxGridSize =
+          RAJA_MAX(gridDim.x * gridDim.y * gridDim.z, m_blockdata->maxGridSize);
     }
 
     // initialize shared memory
@@ -1500,11 +1591,9 @@ public:
     if (threadId < 1) {
       lastBlock = false;
       sd[threadId] = RAJA_MAXLOC(sd[threadId], sd[threadId + 1]);
-      m_blockdata[m_blockoffset + blockId + 1] =
-          RAJA_MAXLOC(sd[threadId], m_blockdata[m_blockoffset + blockId + 1]);
+      m_blockdata->values[blockId] = RAJA_MAXLOC(sd[threadId], m_blockdata->values[blockId]);
       __threadfence();
-      unsigned int oldBlockCount =
-          ::atomicAdd((unsigned int *)&retiredBlocks[m_myID], (unsigned int)1);
+      unsigned int oldBlockCount = atomicAdd((unsigned int*)&retiredBlocks[m_myID], (unsigned int)1);
       lastBlock = (oldBlockCount == ((gridDim.x * gridDim.y * gridDim.z) - 1));
     }
     __syncthreads();
@@ -1514,12 +1603,12 @@ public:
         retiredBlocks[m_myID] = 0;
       }
 
-      CudaReductionLocBlockDataType lmax = {m_reduced_val, m_reduced_idx};
+      CudaReductionLocType<T> lmax = {m_reduced_val, m_reduced_idx};
       int blocks = gridDim.x * gridDim.y * gridDim.z;
       int threads = blockDim.x * blockDim.y * blockDim.z;
 
       for (int i = threadId; i < blocks; i += threads) {
-        lmax = RAJA_MAXLOC(lmax, m_blockdata[m_blockoffset + i + 1]);
+        lmax = RAJA_MAXLOC(lmax, m_blockdata->values[i]);
       }
       sd[threadId] = lmax;
       __syncthreads();
@@ -1553,8 +1642,8 @@ public:
 
       if (threadId < 1) {
         sd[threadId] = RAJA_MAXLOC(sd[threadId], sd[threadId + 1]);
-        m_blockdata[m_blockoffset] =
-            RAJA_MAXLOC(m_blockdata[m_blockoffset], sd[threadId]);
+        m_blockdata->reducedValue =
+            RAJA_MAXLOC(m_blockdata->reducedValue, sd[threadId]);
       }
     }
     return *this;
@@ -1569,22 +1658,24 @@ private:
   bool m_is_copy;
 
   int m_myID;
-  int m_blockoffset;
 
   T m_reduced_val;
-
   Index_type m_reduced_idx;
 
-  CudaReductionLocBlockDataType *m_blockdata;
-  CudaReductionLocBlockDataType *m_max_grid_size;
+  CudaReductionLocBlockType<T> *m_blockdata;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
   static constexpr bool reasonableRangeCheck =
       ((BLOCK_SIZE >= 32) && (BLOCK_SIZE <= 1024));
+  static constexpr bool sizeofcheck = 
+      (  (sizeof(T) <= sizeof(CudaReductionDummyDataType))
+      && (sizeof(CudaReductionLocTallyType<T>) <= sizeof(CudaReductionDummyTallyType))
+      && (sizeof(CudaReductionLocBlockType<T>) <= sizeof(CudaReductionDummyBlockType)));
   static_assert(powerOfTwoCheck, "Error: block sizes must be a power of 2");
   static_assert(reasonableRangeCheck,
                 "Error: block sizes must be between 32 and 1024");
+  static_assert(sizeofcheck, "Error: type must be of size <= " MACROSTR(RAJA_CUDA_REDUCE_VAR_MAXSIZE));
 };
 
 }  // closing brace for RAJA namespace

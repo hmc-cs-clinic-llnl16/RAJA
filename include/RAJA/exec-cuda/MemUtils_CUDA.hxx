@@ -70,28 +70,66 @@ namespace RAJA
 /// Reduction Tallies are computed into a small block to minimize UM migration
 #define RAJA_CUDA_REDUCE_TALLY_LENGTH RAJA_MAX_REDUCE_VARS
 
-///
-/// Typedef defining common data type for RAJA-Cuda reduction data blocks
-/// (use this in all cases to avoid type confusion).
-///
-typedef double CudaReductionBlockDataType;
+/// Should be large enough for all types for which cuda atomics exist
+/// includes the size of the index variable for Loc reductions
+#define RAJA_CUDA_REDUCE_VAR_MAXSIZE 16
 
-///
-/// Struct used to hold current reduced value and corresponding index
-/// for "loc" reduction operations.
-///
-struct CudaReductionLocBlockDataType {
-  CudaReductionBlockDataType val;
-  Index_type idx;
+#define STR(x) #x
+#define MACROSTR(x) STR(x)
+
+
+/// dummy types for use in allocating arrays and distributing array segments
+struct CudaReductionDummyDataType {
+	unsigned char data[RAJA_CUDA_REDUCE_VAR_MAXSIZE];
 };
 
-///
-/// Struct used to hold current reduction tally value for reduction operations.
-///
-struct CudaReductionBlockTallyType {
-  CudaReductionBlockDataType tally;
-  CudaReductionBlockDataType initVal;
+struct CudaReductionDummyBlockType {
+	CudaReductionDummyDataType maxGridSize;
+	CudaReductionDummyDataType globalReducedValue;
+	CudaReductionDummyDataType extraSafetyDummy[2];
+	CudaReductionDummyDataType data[RAJA_CUDA_REDUCE_BLOCK_LENGTH];
 };
+
+struct CudaReductionDummyTallyType {
+	CudaReductionDummyDataType dummy_val;
+	CudaReductionDummyDataType dummy_idx;
+};
+
+typedef unsigned int GridSizeType;
+
+/// types used to simplify memory use in reductions
+template<typename T>
+struct CudaReductionBlockType {
+	GridSizeType maxGridSize;
+	T reducedValue;
+	T values[RAJA_CUDA_REDUCE_BLOCK_LENGTH];
+};
+
+template<typename T>
+struct CudaReductionLocType {
+	T val;
+	Index_type idx;
+};
+
+template<typename T>
+struct CudaReductionLocBlockType {
+	GridSizeType maxGridSize;
+	CudaReductionLocType<T> reducedValue;
+	CudaReductionLocType<T> values[RAJA_CUDA_REDUCE_BLOCK_LENGTH];
+};
+
+template<typename T>
+struct CudaReductionTallyType {
+	T tally;
+	T initVal;
+};
+
+template<typename T>
+struct CudaReductionLocTallyType {
+	CudaReductionLocType<T> tally;
+	CudaReductionLocType<T> initVal;
+};
+
 
 /*!
 *************************************************************************
@@ -112,7 +150,7 @@ int getCudaReductionId();
 */
 void releaseCudaReductionId(int id);
 
-CudaReductionBlockTallyType* getCudaReductionTallyBlock(int id);
+void* getCudaReductionTallyBlock(int id);
 
 /*!
  ******************************************************************************
@@ -144,9 +182,8 @@ void freeCudaReductionTallyBlock();
  *
  ******************************************************************************
  */
-CudaReductionBlockDataType* getCudaReductionMemBlock(int id);
-///
-CudaReductionLocBlockDataType* getCudaReductionLocMemBlock(int id);
+ 
+void* getCudaReductionMemBlock(int id);
 
 /*!
  ******************************************************************************
@@ -156,8 +193,6 @@ CudaReductionLocBlockDataType* getCudaReductionLocMemBlock(int id);
  ******************************************************************************
  */
 void freeCudaReductionMemBlock();
-///
-void freeCudaReductionLocMemBlock();
 
 }  // closing brace for RAJA namespace
 
