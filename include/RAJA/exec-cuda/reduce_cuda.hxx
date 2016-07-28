@@ -860,10 +860,10 @@ public:
 
     // Entire global shared memory block must be initialized to zero so
     // sum reduction is correct.
-    rajaCudaMemsetType<GridSizeType, T>
+    rajaCudaMemsetType<T, GridSizeType>
       <<<((1+RAJA_CUDA_REDUCE_BLOCK_LENGTH+BLOCK_SIZE-1)/BLOCK_SIZE),BLOCK_SIZE>>>
-      ( &m_blockdata->maxGridSize, static_cast<GridSizeType>(0), 1,
-        &m_blockdata->values[0], static_cast<T>(0), RAJA_CUDA_REDUCE_BLOCK_LENGTH );
+      ( &m_blockdata->values[0], static_cast<T>(0), RAJA_CUDA_REDUCE_BLOCK_LENGTH,
+        &m_blockdata->maxGridSize, static_cast<GridSizeType>(0), 1 );
   }
 
   //
@@ -1198,12 +1198,12 @@ public:
     m_blockdata = static_cast<CudaReductionLocBlockType<T>*>(getCudaReductionMemBlock(m_myID));
     m_tallydata = static_cast<CudaReductionLocTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
 
-    rajaCudaMemsetType<GridSizeType, CudaReductionLocType<T>, CudaReductionLocTallyType<T>, GridSizeType>
+    rajaCudaMemsetType<CudaReductionLocType<T>, CudaReductionLocTallyType<T>, GridSizeType, GridSizeType>
       <<<((1+RAJA_CUDA_REDUCE_BLOCK_LENGTH+1+1+BLOCK_SIZE-1)/BLOCK_SIZE), BLOCK_SIZE>>>
-      ( &m_blockdata->maxGridSize, static_cast<GridSizeType>(0), 1,
-        &m_blockdata->values[0], m_reduced_val.tally, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
+      ( &m_blockdata->values[0], m_reduced_val.tally, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
         m_tallydata, m_reduced_val, 1,
-        &retiredBlocks[m_myID], static_cast<GridSizeType>(0), 1 );
+        &retiredBlocks[m_myID], static_cast<GridSizeType>(0), 1,
+        &m_blockdata->maxGridSize, static_cast<GridSizeType>(0), 1 );
   }
 
   //
@@ -1453,12 +1453,12 @@ public:
     m_blockdata = static_cast<CudaReductionLocBlockType<T>*>(getCudaReductionMemBlock(m_myID));
     m_tallydata = static_cast<CudaReductionLocTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
 
-    rajaCudaMemsetType<GridSizeType, CudaReductionLocType<T>, CudaReductionLocTallyType<T>, GridSizeType>
+    rajaCudaMemsetType<CudaReductionLocType<T>, CudaReductionLocTallyType<T>, GridSizeType, GridSizeType>
       <<<((1+RAJA_CUDA_REDUCE_BLOCK_LENGTH+1+1+BLOCK_SIZE-1)/BLOCK_SIZE), BLOCK_SIZE>>>
-      ( &m_blockdata->maxGridSize, static_cast<GridSizeType>(0), 1,
-        &m_blockdata->values[0], m_reduced_val.tally, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
+      ( &m_blockdata->values[0], m_reduced_val.tally, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
         m_tallydata, m_reduced_val, 1,
-        &retiredBlocks[m_myID], static_cast<GridSizeType>(0), 1 );
+        &retiredBlocks[m_myID], static_cast<GridSizeType>(0), 1,
+        &m_blockdata->maxGridSize, static_cast<GridSizeType>(0), 1 );
   }
 
   //

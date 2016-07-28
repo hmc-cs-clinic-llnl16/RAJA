@@ -77,16 +77,18 @@ namespace RAJA
 #define STR(x) #x
 #define MACROSTR(x) STR(x)
 
+#define RAJA_STRUCT_ALIGNAS alignas(DATA_ALIGN)
+
 
 /// dummy types for use in allocating arrays and distributing array segments
 struct CudaReductionDummyDataType {
 	unsigned char data[RAJA_CUDA_REDUCE_VAR_MAXSIZE];
 };
 
-struct CudaReductionDummyBlockType {
+struct RAJA_STRUCT_ALIGNAS CudaReductionDummyBlockType {
+	CudaReductionDummyDataType values[RAJA_CUDA_REDUCE_BLOCK_LENGTH];
 	CudaReductionDummyDataType maxGridSize;
 	CudaReductionDummyDataType extraSafetyDummy;
-	CudaReductionDummyDataType data[RAJA_CUDA_REDUCE_BLOCK_LENGTH];
 };
 
 struct CudaReductionDummyTallyType {
@@ -99,9 +101,9 @@ typedef unsigned int GridSizeType;
 /// types used to simplify typed memory use in reductions
 /// these types fit within the dummy types, checked in static asserts in reduction classes
 template<typename T>
-struct CudaReductionBlockType {
-	GridSizeType maxGridSize;
+struct RAJA_STRUCT_ALIGNAS CudaReductionBlockType {
 	T values[RAJA_CUDA_REDUCE_BLOCK_LENGTH];
+	GridSizeType maxGridSize;
 };
 
 template<typename T>
@@ -111,9 +113,9 @@ struct CudaReductionLocType {
 };
 
 template<typename T>
-struct CudaReductionLocBlockType {
-	GridSizeType maxGridSize;
+struct RAJA_STRUCT_ALIGNAS CudaReductionLocBlockType {
 	CudaReductionLocType<T> values[RAJA_CUDA_REDUCE_BLOCK_LENGTH];
+	GridSizeType maxGridSize;
 };
 
 template<typename T>
