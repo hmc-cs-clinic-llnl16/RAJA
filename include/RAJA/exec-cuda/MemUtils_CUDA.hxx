@@ -114,7 +114,8 @@ struct CudaReductionLocType {
 
 template<typename T>
 struct RAJA_STRUCT_ALIGNAS CudaReductionLocBlockType {
-	CudaReductionLocType<T> values[RAJA_CUDA_REDUCE_BLOCK_LENGTH];
+	T values[RAJA_CUDA_REDUCE_BLOCK_LENGTH];
+	Index_type indices[RAJA_CUDA_REDUCE_BLOCK_LENGTH];
 	GridSizeType maxGridSize;
 };
 
