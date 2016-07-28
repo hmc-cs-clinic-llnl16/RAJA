@@ -85,8 +85,7 @@ struct CudaReductionDummyDataType {
 
 struct CudaReductionDummyBlockType {
 	CudaReductionDummyDataType maxGridSize;
-	CudaReductionDummyDataType globalReducedValue;
-	CudaReductionDummyDataType extraSafetyDummy[2];
+	CudaReductionDummyDataType extraSafetyDummy;
 	CudaReductionDummyDataType data[RAJA_CUDA_REDUCE_BLOCK_LENGTH];
 };
 
@@ -97,11 +96,11 @@ struct CudaReductionDummyTallyType {
 
 typedef unsigned int GridSizeType;
 
-/// types used to simplify memory use in reductions
+/// types used to simplify typed memory use in reductions
+/// these types fit within the dummy types, checked in static asserts in reduction classes
 template<typename T>
 struct CudaReductionBlockType {
 	GridSizeType maxGridSize;
-	T reducedValue;
 	T values[RAJA_CUDA_REDUCE_BLOCK_LENGTH];
 };
 
@@ -114,20 +113,17 @@ struct CudaReductionLocType {
 template<typename T>
 struct CudaReductionLocBlockType {
 	GridSizeType maxGridSize;
-	CudaReductionLocType<T> reducedValue;
 	CudaReductionLocType<T> values[RAJA_CUDA_REDUCE_BLOCK_LENGTH];
 };
 
 template<typename T>
 struct CudaReductionTallyType {
 	T tally;
-	T initVal;
 };
 
 template<typename T>
 struct CudaReductionLocTallyType {
 	CudaReductionLocType<T> tally;
-	CudaReductionLocType<T> initVal;
 };
 
 

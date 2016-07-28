@@ -527,14 +527,13 @@ public:
   explicit ReduceMin(T init_val)
   {
     m_is_copy = false;
-    m_reduced_val = init_val;
+    m_reduced_val.tally = init_val;
     m_myID = getCudaReductionId();
     m_tallydata = static_cast<CudaReductionTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
 
-    rajaCudaMemsetType<T, T>
-      <<<2, 1>>>
-      ( &m_tallydata->tally, init_val, 1,
-        &m_tallydata->initVal, init_val, 1 );
+    rajaCudaMemsetType<CudaReductionTallyType<T>>
+      <<<1, 1>>>
+      ( m_tallydata, m_reduced_val, 1 );
   }
 
   //
@@ -571,8 +570,8 @@ public:
   operator T()
   {
     cudaErrchk(cudaDeviceSynchronize());
-    m_reduced_val = m_tallydata->tally;
-    return m_reduced_val;
+    m_reduced_val = *m_tallydata;
+    return m_reduced_val.tally;
   }
 
   //
@@ -599,7 +598,7 @@ public:
       // this descends all the way to 1
       if (threadId < i) {
         // no need for __syncthreads()
-        sd[threadId + i] = m_reduced_val;
+        sd[threadId + i] = m_reduced_val.tally;
       }
     }
     __syncthreads();
@@ -652,7 +651,7 @@ private:
 
   int m_myID;
 
-  T m_reduced_val;
+  CudaReductionTallyType<T> m_reduced_val;
 
   CudaReductionTallyType<T> *m_tallydata;
 
@@ -691,14 +690,13 @@ public:
   explicit ReduceMax(T init_val)
   {
     m_is_copy = false;
-    m_reduced_val = init_val;
+    m_reduced_val.tally = init_val;
     m_myID = getCudaReductionId();
     m_tallydata = static_cast<CudaReductionTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
 
-    rajaCudaMemsetType<T, T>
-      <<<2, 1>>>
-      ( &m_tallydata->tally, init_val, 1,
-        &m_tallydata->initVal, init_val, 1 );
+    rajaCudaMemsetType<CudaReductionTallyType<T>>
+      <<<1, 1>>>
+      ( m_tallydata, m_reduced_val, 1 );
   }
 
   //
@@ -735,8 +733,8 @@ public:
   operator T()
   {
     cudaErrchk(cudaDeviceSynchronize());
-    m_reduced_val = m_tallydata->tally;
-    return m_reduced_val;
+    m_reduced_val = *m_tallydata;
+    return m_reduced_val.tally;
   }
 
   //
@@ -763,7 +761,7 @@ public:
       // this descends all the way to 1
       if (threadId < i) {
         // no need for __syncthreads()
-        sd[threadId + i] = m_reduced_val;
+        sd[threadId + i] = m_reduced_val.tally;
       }
     }
     __syncthreads();
@@ -816,7 +814,7 @@ private:
 
   int m_myID;
 
-  T m_reduced_val;
+  CudaReductionTallyType<T> m_reduced_val;
 
   CudaReductionTallyType<T> *m_tallydata;
 
@@ -855,10 +853,10 @@ public:
   explicit ReduceSum(T init_val)
   {
     m_is_copy = false;
-    m_init_val = init_val;
-    m_reduced_val = static_cast<T>(0);
+    m_reduced_val.tally = init_val;
     m_myID = getCudaReductionId();
     m_blockdata = static_cast<CudaReductionBlockType<T>*>(getCudaReductionMemBlock(m_myID));
+    // m_tallydata = static_cast<CudaReductionTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
 
     // Entire global shared memory block must be initialized to zero so
     // sum reduction is correct.
@@ -903,16 +901,18 @@ public:
   {
     cudaErrchk(cudaDeviceSynchronize());
 
-    m_blockdata->reducedValue = static_cast<T>(0);
+    // m_reduced_val = *m_tallydata;
 
     size_t grid_size = m_blockdata->maxGridSize;
     assert(grid_size < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
-    for (size_t i = 0; i < grid_size; ++i) {
-      m_blockdata->reducedValue += m_blockdata->values[i];
-    }
-    m_reduced_val = m_init_val + m_blockdata->reducedValue;
 
-    return m_reduced_val;
+    T temp = static_cast<T>(0);
+    for (size_t i = 0; i < grid_size; ++i) {
+      temp += m_blockdata->values[i];
+    }
+    // m_reduced_val.tally += temp;
+
+    return m_reduced_val.tally + temp;
   }
 
   //
@@ -955,7 +955,7 @@ public:
 
     sd[threadId] = val;
 
-    T temp = 0;
+    T temp = static_cast<T>(0);
     __syncthreads();
 
     for (int i = BLOCK_SIZE / 2; i >= WARP_SIZE; i /= 2) {
@@ -989,8 +989,7 @@ private:
   bool m_is_copy;
   int m_myID;
 
-  T m_init_val;
-  T m_reduced_val;
+  CudaReductionTallyType<T> m_reduced_val;
 
   CudaReductionBlockType<T> *m_blockdata;
 
@@ -1030,15 +1029,13 @@ public:
   explicit ReduceSum(T init_val)
   {
     m_is_copy = false;
-    m_reduced_val = static_cast<T>(0);
-    m_init_val = init_val;
+    m_reduced_val.tally = init_val;
     m_myID = getCudaReductionId();
     m_tallydata = static_cast<CudaReductionTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
 
-    rajaCudaMemsetType<T, T>
-      <<<2, 1>>>
-      ( &m_tallydata->tally, static_cast<T>(0), 1,
-        &m_tallydata->initVal, init_val, 1 );
+    rajaCudaMemsetType<CudaReductionTallyType<T>>
+      <<<1, 1>>>
+      ( m_tallydata, m_reduced_val, 1 );
   }
 
   //
@@ -1075,8 +1072,8 @@ public:
   operator T()
   {
     cudaDeviceSynchronize();
-    m_reduced_val = m_init_val + m_tallydata->tally;
-    return m_reduced_val;
+    m_reduced_val = *m_tallydata;
+    return m_reduced_val.tally;
   }
 
   //
@@ -1147,8 +1144,7 @@ private:
 
   int m_myID;
 
-  T m_init_val;
-  T m_reduced_val;
+  CudaReductionTallyType<T> m_reduced_val;
 
   CudaReductionTallyType<T> *m_tallydata;
 
@@ -1196,20 +1192,17 @@ public:
   explicit ReduceMinLoc(T init_val, Index_type init_loc)
   {
     m_is_copy = false;
-    m_reduced_val = init_val;
-    m_reduced_idx = init_loc;
+    m_reduced_val.tally.val = init_val;
+    m_reduced_val.tally.idx = init_loc;
     m_myID = getCudaReductionId();
     m_blockdata = static_cast<CudaReductionLocBlockType<T>*>(getCudaReductionMemBlock(m_myID));
+    m_tallydata = static_cast<CudaReductionLocTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
 
-    CudaReductionLocType<T> tmp_init;
-    tmp_init.val = init_val;
-    tmp_init.idx = init_loc;
-
-    rajaCudaMemsetType<GridSizeType, CudaReductionLocType<T>, CudaReductionLocType<T>, GridSizeType>
-      <<<((1+1+RAJA_CUDA_REDUCE_BLOCK_LENGTH+1+BLOCK_SIZE-1)/BLOCK_SIZE), BLOCK_SIZE>>>
+    rajaCudaMemsetType<GridSizeType, CudaReductionLocType<T>, CudaReductionLocTallyType<T>, GridSizeType>
+      <<<((1+RAJA_CUDA_REDUCE_BLOCK_LENGTH+1+1+BLOCK_SIZE-1)/BLOCK_SIZE), BLOCK_SIZE>>>
       ( &m_blockdata->maxGridSize, static_cast<GridSizeType>(0), 1,
-        &m_blockdata->reducedValue, tmp_init, 1,
-        &m_blockdata->values[0], tmp_init, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
+        &m_blockdata->values[0], m_reduced_val.tally, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
+        m_tallydata, m_reduced_val, 1,
         &retiredBlocks[m_myID], static_cast<GridSizeType>(0), 1 );
   }
 
@@ -1249,8 +1242,8 @@ public:
     cudaErrchk(cudaDeviceSynchronize());
     size_t grid_size = m_blockdata->maxGridSize;
     assert(grid_size < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
-    m_reduced_val = m_blockdata->reducedValue.val;
-    return m_reduced_val;
+    m_reduced_val = *m_tallydata;
+    return m_reduced_val.tally.val;
   }
 
   //
@@ -1268,8 +1261,8 @@ public:
   Index_type getLoc()
   {
     cudaErrchk(cudaDeviceSynchronize());
-    m_reduced_idx = m_blockdata->reducedValue.idx;
-    return m_reduced_idx;
+    m_reduced_val = *m_tallydata;
+    return m_reduced_val.tally.idx;
   }
 
   //
@@ -1300,8 +1293,8 @@ public:
       // this descends all the way to 1
       if (threadId < i) {
         // no need for __syncthreads()
-        sd[threadId + i].val = m_reduced_val;
-        sd[threadId + i].idx = m_reduced_idx;
+        sd[threadId + i] = m_reduced_val.tally;
+        // sd[threadId + i].idx = m_reduced_idx;
       }
     }
     __syncthreads();
@@ -1352,7 +1345,7 @@ public:
         retiredBlocks[m_myID] = 0; // not necessary if using atomicInc
       }
 
-      CudaReductionLocType<T> lmin = {m_reduced_val, m_reduced_idx};
+      CudaReductionLocType<T> lmin = m_reduced_val.tally;
       int blocks = gridDim.x * gridDim.y * gridDim.z;
       int threads = blockDim.x * blockDim.y * blockDim.z;
       for (int i = threadId; i < blocks; i += threads) {
@@ -1390,8 +1383,8 @@ public:
 
       if (threadId < 1) {
         sd[threadId] = RAJA_MINLOC(sd[threadId], sd[threadId + 1]);
-        m_blockdata->reducedValue =
-            RAJA_MINLOC(m_blockdata->reducedValue, sd[threadId]);
+        m_tallydata->tally =
+            RAJA_MINLOC(m_tallydata->tally, sd[threadId]);
       }
     }
     return *this;
@@ -1407,10 +1400,10 @@ private:
 
   int m_myID;
 
-  T m_reduced_val;
-  Index_type m_reduced_idx;
+  CudaReductionLocTallyType<T> m_reduced_val;
 
   CudaReductionLocBlockType<T> *m_blockdata;
+  CudaReductionLocTallyType<T> *m_tallydata;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
@@ -1447,20 +1440,17 @@ public:
   explicit ReduceMaxLoc(T init_val, Index_type init_loc)
   {
     m_is_copy = false;
-    m_reduced_val = init_val;
-    m_reduced_idx = init_loc;
+    m_reduced_val.tally.val = init_val;
+    m_reduced_val.tally.idx = init_loc;
     m_myID = getCudaReductionId();
     m_blockdata = static_cast<CudaReductionLocBlockType<T>*>(getCudaReductionMemBlock(m_myID));
+    m_tallydata = static_cast<CudaReductionLocTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
 
-    CudaReductionLocType<T> tmp_init;
-    tmp_init.val = init_val;
-    tmp_init.idx = init_loc;
-
-    rajaCudaMemsetType<GridSizeType, CudaReductionLocType<T>, CudaReductionLocType<T>, GridSizeType>
-      <<<((1+1+RAJA_CUDA_REDUCE_BLOCK_LENGTH+1+BLOCK_SIZE-1)/BLOCK_SIZE), BLOCK_SIZE>>>
+    rajaCudaMemsetType<GridSizeType, CudaReductionLocType<T>, CudaReductionLocTallyType<T>, GridSizeType>
+      <<<((1+RAJA_CUDA_REDUCE_BLOCK_LENGTH+1+1+BLOCK_SIZE-1)/BLOCK_SIZE), BLOCK_SIZE>>>
       ( &m_blockdata->maxGridSize, static_cast<GridSizeType>(0), 1,
-        &m_blockdata->reducedValue, tmp_init, 1,
-        &m_blockdata->values[0], tmp_init, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
+        &m_blockdata->values[0], m_reduced_val.tally, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
+        m_tallydata, m_reduced_val, 1,
         &retiredBlocks[m_myID], static_cast<GridSizeType>(0), 1 );
   }
 
@@ -1500,8 +1490,8 @@ public:
     cudaErrchk(cudaDeviceSynchronize());
     size_t grid_size = m_blockdata->maxGridSize;
     assert(grid_size < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
-    m_reduced_val = m_blockdata->reducedValue.val;
-    return m_reduced_val;
+    m_reduced_val = *m_tallydata;
+    return m_reduced_val.tally.val;
   }
 
   //
@@ -1519,8 +1509,8 @@ public:
   Index_type getLoc()
   {
     cudaErrchk(cudaDeviceSynchronize());
-    m_reduced_idx = m_blockdata->reducedValue.idx;
-    return m_reduced_idx;
+    m_reduced_val = *m_tallydata;
+    return m_reduced_val.tally.idx;
   }
 
   //
@@ -1551,8 +1541,8 @@ public:
       // this descends all the way to 1
       if (threadId < i) {
         // no need for __syncthreads()
-        sd[threadId + i].val = m_reduced_val;
-        sd[threadId + i].idx = m_reduced_idx;
+        sd[threadId + i] = m_reduced_val.tally;
+        // sd[threadId + i].idx = m_reduced_idx;
       }
     }
     __syncthreads();
@@ -1603,10 +1593,9 @@ public:
         retiredBlocks[m_myID] = 0;
       }
 
-      CudaReductionLocType<T> lmax = {m_reduced_val, m_reduced_idx};
+      CudaReductionLocType<T> lmax = m_reduced_val.tally;
       int blocks = gridDim.x * gridDim.y * gridDim.z;
       int threads = blockDim.x * blockDim.y * blockDim.z;
-
       for (int i = threadId; i < blocks; i += threads) {
         lmax = RAJA_MAXLOC(lmax, m_blockdata->values[i]);
       }
@@ -1642,8 +1631,8 @@ public:
 
       if (threadId < 1) {
         sd[threadId] = RAJA_MAXLOC(sd[threadId], sd[threadId + 1]);
-        m_blockdata->reducedValue =
-            RAJA_MAXLOC(m_blockdata->reducedValue, sd[threadId]);
+        m_tallydata->tally =
+            RAJA_MAXLOC(m_tallydata->tally, sd[threadId]);
       }
     }
     return *this;
@@ -1659,10 +1648,10 @@ private:
 
   int m_myID;
 
-  T m_reduced_val;
-  Index_type m_reduced_idx;
+  CudaReductionLocTallyType<T> m_reduced_val;
 
   CudaReductionLocBlockType<T> *m_blockdata;
+  CudaReductionLocTallyType<T> *m_tallydata;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
