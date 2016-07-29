@@ -596,8 +596,8 @@ public:
   //
   operator T()
   {
-    cudaErrchk(cudaDeviceSynchronize());
-    m_reduced_val = *m_tallydata;
+    cudaErrchk(cudaMemcpyAsync(&m_reduced_val, m_tallydata, sizeof(CudaReductionTallyTypeAtomic<T>), cudaMemcpyDeviceToHost, 0));
+    // cudaErrchk(cudaDeviceSynchronize()); // no sync necessary if copying to pageable memory on the host
     return m_reduced_val.tally;
   }
 
@@ -759,8 +759,8 @@ public:
   //
   operator T()
   {
-    cudaErrchk(cudaDeviceSynchronize());
-    m_reduced_val = *m_tallydata;
+    cudaErrchk(cudaMemcpyAsync(&m_reduced_val, m_tallydata, sizeof(CudaReductionTallyTypeAtomic<T>), cudaMemcpyDeviceToHost, 0));
+    // cudaErrchk(cudaDeviceSynchronize());  // no sync necessary if copying to pageable memory on the host
     return m_reduced_val.tally;
   }
 
@@ -934,9 +934,8 @@ public:
   //
   operator T()
   {
-    cudaErrchk(cudaDeviceSynchronize());
-
-    m_reduced_val = *m_tallydata;
+    cudaErrchk(cudaMemcpyAsync(&m_reduced_val, m_tallydata, sizeof(CudaReductionTallyType<T>), cudaMemcpyDeviceToHost, 0));
+    // cudaErrchk(cudaDeviceSynchronize());  // no sync necessary if copying to pageable memory on the host
     assert(m_reduced_val.maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_reduced_val.tally;
   }
@@ -1139,8 +1138,8 @@ public:
   //
   operator T()
   {
-    cudaDeviceSynchronize();
-    m_reduced_val = *m_tallydata;
+    cudaErrchk(cudaMemcpyAsync(&m_reduced_val, m_tallydata, sizeof(CudaReductionTallyTypeAtomic<T>), cudaMemcpyDeviceToHost, 0));
+    // cudaErrchk(cudaDeviceSynchronize());  // no sync necessary if copying to pageable memory on the host
     return m_reduced_val.tally;
   }
 
@@ -1311,8 +1310,8 @@ public:
   //
   operator T()
   {
-    cudaErrchk(cudaDeviceSynchronize());
-    m_reduced_val = *m_tallydata;
+    cudaErrchk(cudaMemcpyAsync(&m_reduced_val, m_tallydata, sizeof(CudaReductionLocTallyType<T>), cudaMemcpyDeviceToHost, 0));
+    // cudaErrchk(cudaDeviceSynchronize());  // no sync necessary if copying to pageable memory on the host
     assert(m_reduced_val.maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_reduced_val.tally.val;
   }
@@ -1331,15 +1330,17 @@ public:
   //
   Index_type getLoc()
   {
-    cudaErrchk(cudaDeviceSynchronize());
-    m_reduced_val = *m_tallydata;
+    cudaErrchk(cudaMemcpyAsync(&m_reduced_val, m_tallydata, sizeof(CudaReductionLocTallyType<T>), cudaMemcpyDeviceToHost, 0));
+    // cudaErrchk(cudaDeviceSynchronize());  // no sync necessary if copying to pageable memory on the host
+    assert(m_reduced_val.maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_reduced_val.tally.idx;
   }
 
   CudaReductionLocType<T> getMinLoc()
   {
-    cudaErrchk(cudaDeviceSynchronize());
-    m_reduced_val = *m_tallydata;
+    cudaErrchk(cudaMemcpyAsync(&m_reduced_val, m_tallydata, sizeof(CudaReductionLocTallyType<T>), cudaMemcpyDeviceToHost, 0));
+    // cudaErrchk(cudaDeviceSynchronize());  // no sync necessary if copying to pageable memory on the host
+    assert(m_reduced_val.maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_reduced_val.tally;
   }
 
@@ -1599,8 +1600,8 @@ public:
   //
   operator T()
   {
-    cudaErrchk(cudaDeviceSynchronize());
-    m_reduced_val = *m_tallydata;
+    cudaErrchk(cudaMemcpyAsync(&m_reduced_val, m_tallydata, sizeof(CudaReductionLocTallyType<T>), cudaMemcpyDeviceToHost, 0));
+    // cudaErrchk(cudaDeviceSynchronize());  // no sync necessary if copying to pageable memory on the host
     assert(m_reduced_val.maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_reduced_val.tally.val;
   }
@@ -1619,15 +1620,17 @@ public:
   //
   Index_type getLoc()
   {
-    cudaErrchk(cudaDeviceSynchronize());
-    m_reduced_val = *m_tallydata;
+    cudaErrchk(cudaMemcpyAsync(&m_reduced_val, m_tallydata, sizeof(CudaReductionLocTallyType<T>), cudaMemcpyDeviceToHost, 0));
+    // cudaErrchk(cudaDeviceSynchronize());  // no sync necessary if copying to pageable memory on the host
+    assert(m_reduced_val.maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_reduced_val.tally.idx;
   }
 
   CudaReductionLocType<T> getMaxLoc()
   {
-    cudaErrchk(cudaDeviceSynchronize());
-    m_reduced_val = *m_tallydata;
+    cudaErrchk(cudaMemcpyAsync(&m_reduced_val, m_tallydata, sizeof(CudaReductionLocTallyType<T>), cudaMemcpyDeviceToHost, 0));
+    // cudaErrchk(cudaDeviceSynchronize());  // no sync necessary if copying to pageable memory on the host
+    assert(m_reduced_val.maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_reduced_val.tally;
   }
 
