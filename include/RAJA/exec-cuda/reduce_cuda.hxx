@@ -556,9 +556,9 @@ public:
     m_is_copy = false;
     m_reduced_val.tally = init_val;
     m_myID = getCudaReductionId();
-    m_tallydata = static_cast<CudaReductionTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
+    m_tallydata = static_cast<CudaReductionTallyTypeAtomic<T>*>(getCudaReductionTallyBlock(m_myID));
 
-    rajaCudaMemsetType<CudaReductionTallyType<T>>
+    rajaCudaMemsetType<CudaReductionTallyTypeAtomic<T>>
       <<<1, 1>>>
       ( m_tallydata, m_reduced_val, 1 );
   }
@@ -678,9 +678,9 @@ private:
 
   int m_myID;
 
-  CudaReductionTallyType<T> m_reduced_val;
+  CudaReductionTallyTypeAtomic<T> m_reduced_val;
 
-  CudaReductionTallyType<T> *m_tallydata;
+  CudaReductionTallyTypeAtomic<T> *m_tallydata;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
@@ -719,9 +719,9 @@ public:
     m_is_copy = false;
     m_reduced_val.tally = init_val;
     m_myID = getCudaReductionId();
-    m_tallydata = static_cast<CudaReductionTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
+    m_tallydata = static_cast<CudaReductionTallyTypeAtomic<T>*>(getCudaReductionTallyBlock(m_myID));
 
-    rajaCudaMemsetType<CudaReductionTallyType<T>>
+    rajaCudaMemsetType<CudaReductionTallyTypeAtomic<T>>
       <<<1, 1>>>
       ( m_tallydata, m_reduced_val, 1 );
   }
@@ -841,9 +841,9 @@ private:
 
   int m_myID;
 
-  CudaReductionTallyType<T> m_reduced_val;
+  CudaReductionTallyTypeAtomic<T> m_reduced_val;
 
-  CudaReductionTallyType<T> *m_tallydata;
+  CudaReductionTallyTypeAtomic<T> *m_tallydata;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
@@ -881,16 +881,17 @@ public:
   {
     m_is_copy = false;
     m_reduced_val.tally = init_val;
+    m_reduced_val.maxGridSize = static_cast<GridSizeType>(0);
     m_myID = getCudaReductionId();
     m_blockdata = static_cast<CudaReductionBlockType<T>*>(getCudaReductionMemBlock(m_myID));
-    // m_tallydata = static_cast<CudaReductionTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
+    m_tallydata = static_cast<CudaReductionTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
 
     // Entire global shared memory block must be initialized to zero so
     // sum reduction is correct.
-    rajaCudaMemsetType<T, GridSizeType>
-      <<<((1+RAJA_CUDA_REDUCE_BLOCK_LENGTH+BLOCK_SIZE-1)/BLOCK_SIZE),BLOCK_SIZE>>>
+    rajaCudaMemsetType<T, CudaReductionTallyType<T>>
+      <<<((RAJA_CUDA_REDUCE_BLOCK_LENGTH+1+BLOCK_SIZE-1)/BLOCK_SIZE),BLOCK_SIZE>>>
       ( &m_blockdata->values[0], static_cast<T>(0), RAJA_CUDA_REDUCE_BLOCK_LENGTH,
-        &m_blockdata->maxGridSize, static_cast<GridSizeType>(0), 1 );
+        m_tallydata, m_reduced_val, 1 );
   }
 
   //
@@ -930,7 +931,7 @@ public:
 
     // m_reduced_val = *m_tallydata;
 
-    size_t grid_size = m_blockdata->maxGridSize;
+    size_t grid_size = m_tallydata->maxGridSize;
     assert(grid_size < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
 
     T temp = static_cast<T>(0);
@@ -966,8 +967,8 @@ public:
                    + (blockDim.x * blockDim.y) * threadIdx.z;
 
     if (blockId + threadId == 0) {
-      m_blockdata->maxGridSize =
-          RAJA_MAX(gridDim.x * gridDim.y * gridDim.z, m_blockdata->maxGridSize);
+      m_tallydata->maxGridSize =
+          RAJA_MAX(gridDim.x * gridDim.y * gridDim.z, m_tallydata->maxGridSize);
     }
 
     // initialize shared memory
@@ -1019,6 +1020,7 @@ private:
   CudaReductionTallyType<T> m_reduced_val;
 
   CudaReductionBlockType<T> *m_blockdata;
+  CudaReductionTallyType<T> *m_tallydata;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
@@ -1058,9 +1060,9 @@ public:
     m_is_copy = false;
     m_reduced_val.tally = init_val;
     m_myID = getCudaReductionId();
-    m_tallydata = static_cast<CudaReductionTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
+    m_tallydata = static_cast<CudaReductionTallyTypeAtomic<T>*>(getCudaReductionTallyBlock(m_myID));
 
-    rajaCudaMemsetType<CudaReductionTallyType<T>>
+    rajaCudaMemsetType<CudaReductionTallyTypeAtomic<T>>
       <<<1, 1>>>
       ( m_tallydata, m_reduced_val, 1 );
   }
@@ -1171,9 +1173,9 @@ private:
 
   int m_myID;
 
-  CudaReductionTallyType<T> m_reduced_val;
+  CudaReductionTallyTypeAtomic<T> m_reduced_val;
 
-  CudaReductionTallyType<T> *m_tallydata;
+  CudaReductionTallyTypeAtomic<T> *m_tallydata;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
@@ -1233,17 +1235,17 @@ public:
     m_is_copy = false;
     m_reduced_val.tally.val = init_val;
     m_reduced_val.tally.idx = init_loc;
+    m_reduced_val.maxGridSize = static_cast<GridSizeType>(0);
     m_myID = getCudaReductionId();
     m_blockdata = static_cast<CudaReductionLocBlockType<T>*>(getCudaReductionMemBlock(m_myID));
     m_tallydata = static_cast<CudaReductionLocTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
 
-    rajaCudaMemsetType<T, Index_type, CudaReductionLocTallyType<T>, GridSizeType, GridSizeType>
-      <<<((RAJA_CUDA_REDUCE_BLOCK_LENGTH+RAJA_CUDA_REDUCE_BLOCK_LENGTH+1+1+1+BLOCK_SIZE-1)/BLOCK_SIZE), BLOCK_SIZE>>>
+    rajaCudaMemsetType<T, Index_type, CudaReductionLocTallyType<T>, GridSizeType>
+      <<<((RAJA_CUDA_REDUCE_BLOCK_LENGTH+RAJA_CUDA_REDUCE_BLOCK_LENGTH+1+1+BLOCK_SIZE-1)/BLOCK_SIZE), BLOCK_SIZE>>>
       ( &m_blockdata->values[0], init_val, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
         &m_blockdata->indices[0], init_loc, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
         m_tallydata, m_reduced_val, 1,
-        &retiredBlocks[m_myID], static_cast<GridSizeType>(0), 1,
-        &m_blockdata->maxGridSize, static_cast<GridSizeType>(0), 1 );
+        &retiredBlocks[m_myID], static_cast<GridSizeType>(0), 1 );
   }
 
   //
@@ -1280,9 +1282,8 @@ public:
   operator T()
   {
     cudaErrchk(cudaDeviceSynchronize());
-    size_t grid_size = m_blockdata->maxGridSize;
-    assert(grid_size < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     m_reduced_val = *m_tallydata;
+    assert(m_reduced_val.maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_reduced_val.tally.val;
   }
 
@@ -1332,8 +1333,8 @@ public:
                    + (blockDim.x * blockDim.y) * threadIdx.z;
 
     if (blockId + threadId == 0) {
-      m_blockdata->maxGridSize =
-          RAJA_MAX(gridDim.x * gridDim.y * gridDim.z, m_blockdata->maxGridSize);
+      m_tallydata->maxGridSize =
+          RAJA_MAX(gridDim.x * gridDim.y * gridDim.z, m_tallydata->maxGridSize);
     }
 
     // initialize shared memory
@@ -1522,17 +1523,17 @@ public:
     m_is_copy = false;
     m_reduced_val.tally.val = init_val;
     m_reduced_val.tally.idx = init_loc;
+    m_reduced_val.maxGridSize = static_cast<GridSizeType>(0);
     m_myID = getCudaReductionId();
     m_blockdata = static_cast<CudaReductionLocBlockType<T>*>(getCudaReductionMemBlock(m_myID));
     m_tallydata = static_cast<CudaReductionLocTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
 
-    rajaCudaMemsetType<T, Index_type, CudaReductionLocTallyType<T>, GridSizeType, GridSizeType>
-      <<<((RAJA_CUDA_REDUCE_BLOCK_LENGTH+RAJA_CUDA_REDUCE_BLOCK_LENGTH+1+1+1+BLOCK_SIZE-1)/BLOCK_SIZE), BLOCK_SIZE>>>
+    rajaCudaMemsetType<T, Index_type, CudaReductionLocTallyType<T>, GridSizeType>
+      <<<((RAJA_CUDA_REDUCE_BLOCK_LENGTH+RAJA_CUDA_REDUCE_BLOCK_LENGTH+1+1+BLOCK_SIZE-1)/BLOCK_SIZE), BLOCK_SIZE>>>
       ( &m_blockdata->values[0], init_val, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
         &m_blockdata->indices[0], init_loc, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
         m_tallydata, m_reduced_val, 1,
-        &retiredBlocks[m_myID], static_cast<GridSizeType>(0), 1,
-        &m_blockdata->maxGridSize, static_cast<GridSizeType>(0), 1 );
+        &retiredBlocks[m_myID], static_cast<GridSizeType>(0), 1 );
   }
 
   //
@@ -1569,9 +1570,8 @@ public:
   operator T()
   {
     cudaErrchk(cudaDeviceSynchronize());
-    size_t grid_size = m_blockdata->maxGridSize;
-    assert(grid_size < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     m_reduced_val = *m_tallydata;
+    assert(m_reduced_val.maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_reduced_val.tally.val;
   }
 
@@ -1621,8 +1621,8 @@ public:
                    + (blockDim.x * blockDim.y) * threadIdx.z;
 
     if (blockId + threadId == 0) {
-      m_blockdata->maxGridSize =
-          RAJA_MAX(gridDim.x * gridDim.y * gridDim.z, m_blockdata->maxGridSize);
+      m_tallydata->maxGridSize =
+          RAJA_MAX(gridDim.x * gridDim.y * gridDim.z, m_tallydata->maxGridSize);
     }
 
     // initialize shared memory

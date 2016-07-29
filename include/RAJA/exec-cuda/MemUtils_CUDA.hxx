@@ -103,7 +103,6 @@ typedef unsigned int GridSizeType;
 template<typename T>
 struct RAJA_STRUCT_ALIGNAS CudaReductionBlockType {
 	T values[RAJA_CUDA_REDUCE_BLOCK_LENGTH];
-	GridSizeType maxGridSize;
 };
 
 template<typename T>
@@ -116,17 +115,23 @@ template<typename T>
 struct RAJA_STRUCT_ALIGNAS CudaReductionLocBlockType {
 	T values[RAJA_CUDA_REDUCE_BLOCK_LENGTH];
 	Index_type indices[RAJA_CUDA_REDUCE_BLOCK_LENGTH];
-	GridSizeType maxGridSize;
 };
 
 template<typename T>
 struct CudaReductionTallyType {
+	T tally;
+	GridSizeType maxGridSize;
+};
+
+template<typename T>
+struct CudaReductionTallyTypeAtomic {
 	T tally;
 };
 
 template<typename T>
 struct CudaReductionLocTallyType {
 	CudaReductionLocType<T> tally;
+	GridSizeType maxGridSize;
 };
 
 
