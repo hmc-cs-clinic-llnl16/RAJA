@@ -859,6 +859,15 @@ private:
   static_assert(sizeofcheck, "Error: type must be of size <= " MACROSTR(RAJA_CUDA_REDUCE_VAR_MAXSIZE));
 };
 
+///
+/// Each ReduceSum, ReduceMinLoc, or ReduceMaxLoc object uses retiredBlocks
+/// as a way to complete the reduction in a single pass. Although the algorithm
+/// updates retiredBlocks via an atomicAdd(int) the actual reduction values
+/// do not use atomics and require a finishing stage performed
+/// by the last block.
+///
+__device__ __managed__ GridSizeType retiredBlocks[RAJA_MAX_REDUCE_VARS];
+
 /*!
  ******************************************************************************
  *
@@ -886,12 +895,10 @@ public:
     m_blockdata = static_cast<CudaReductionBlockType<T>*>(getCudaReductionMemBlock(m_myID));
     m_tallydata = static_cast<CudaReductionTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
 
-    // Entire global shared memory block must be initialized to zero so
-    // sum reduction is correct.
-    rajaCudaMemsetType<T, CudaReductionTallyType<T>>
-      <<<((RAJA_CUDA_REDUCE_BLOCK_LENGTH+1+BLOCK_SIZE-1)/BLOCK_SIZE),BLOCK_SIZE>>>
-      ( &m_blockdata->values[0], static_cast<T>(0), RAJA_CUDA_REDUCE_BLOCK_LENGTH,
-        m_tallydata, m_reduced_val, 1 );
+    rajaCudaMemsetType<CudaReductionTallyType<T>, GridSizeType>
+      <<<2,1>>>
+      ( m_tallydata, m_reduced_val, 1,
+        &retiredBlocks[m_myID], static_cast<GridSizeType>(0), 1 );
   }
 
   //
@@ -929,18 +936,9 @@ public:
   {
     cudaErrchk(cudaDeviceSynchronize());
 
-    // m_reduced_val = *m_tallydata;
-
-    size_t grid_size = m_tallydata->maxGridSize;
-    assert(grid_size < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
-
-    T temp = static_cast<T>(0);
-    for (size_t i = 0; i < grid_size; ++i) {
-      temp += m_blockdata->values[i];
-    }
-    // m_reduced_val.tally += temp;
-
-    return m_reduced_val.tally + temp;
+    m_reduced_val = *m_tallydata;
+    assert(m_reduced_val.maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
+    return m_reduced_val.tally;
   }
 
   //
@@ -983,7 +981,6 @@ public:
 
     sd[threadId] = val;
 
-    T temp = static_cast<T>(0);
     __syncthreads();
 
     for (int i = BLOCK_SIZE / 2; i >= WARP_SIZE; i /= 2) {
@@ -993,6 +990,7 @@ public:
       __syncthreads();
     }
 
+    T temp;
     if (threadId < WARP_SIZE) {
       temp = sd[threadId];
       for (int i = WARP_SIZE / 2; i > 0; i /= 2) {
@@ -1000,11 +998,52 @@ public:
       }
     }
 
-    // one thread adds to gmem
-    if (threadId == 0) {
-      m_blockdata->values[blockId] += temp;
+    bool lastBlock = false;
+
+    if (threadId < 1) {
+      // write data to gmem block
+      m_blockdata->values[blockId] = temp;
+      // ensure write visible to all threadblocks
+      __threadfence();
+      // increment counter, (wraps back to zero at second parameter)
+      unsigned int oldBlockCount = atomicInc((unsigned int*)&retiredBlocks[m_myID], ((gridDim.x * gridDim.y * gridDim.z) - 1));
+      lastBlock = (oldBlockCount == ((gridDim.x * gridDim.y * gridDim.z) - 1));
     }
 
+    // returns non-zero value if any thread in this block passed in a non-zero value
+    lastBlock = __syncthreads_or(lastBlock);
+
+    if (lastBlock) {
+      T temp = static_cast<T>(0);
+
+      int blocks = gridDim.x * gridDim.y * gridDim.z;
+      int threads = blockDim.x * blockDim.y * blockDim.z;
+      for (int i = threadId; i < blocks; i += threads) {
+        temp += m_blockdata->values[i];
+      }
+      // don't need to zero high number not participating threads sd slots as done for block reduction
+      sd[threadId] = temp;
+      __syncthreads();
+
+      for (int i = BLOCK_SIZE / 2; i >= WARP_SIZE; i /= 2) {
+        if (threadId < i) {
+          sd[threadId] += sd[threadId + i];
+        }
+        __syncthreads();
+      }
+
+      if (threadId < WARP_SIZE) {
+        temp = sd[threadId];
+        for (int i = WARP_SIZE / 2; i > 0; i /= 2) {
+          temp += shfl_xor(temp, i);
+        }
+      }
+
+      if (threadId < 1) {
+        // add reduction to tally
+        m_tallydata->tally += temp;
+      }
+    }
     return *this;
   }
 
@@ -1190,15 +1229,6 @@ private:
                 "Error: block sizes must be between 32 and 1024");
   static_assert(sizeofcheck, "Error: type must be of size <= " MACROSTR(RAJA_CUDA_REDUCE_VAR_MAXSIZE));
 };
-
-///
-/// Each ReduceMinLoc or ReduceMaxLoc object uses retiredBlocks as a way
-/// to complete the reduction in a single pass. Although the algorithm
-/// updates retiredBlocks via an atomicAdd(int) the actual reduction values
-/// do not use atomics and require a finishing stage performed
-/// by the last block.
-///
-__device__ __managed__ GridSizeType retiredBlocks[RAJA_MAX_REDUCE_VARS];
 
 
 // set index first to avoid changes to val1 or val2 when writing to val_set
