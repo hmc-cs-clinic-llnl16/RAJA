@@ -1016,7 +1016,7 @@ public:
       T temp = static_cast<T>(0);
 
       int blocks = gridDim.x * gridDim.y * gridDim.z;
-      int threads = blockDim.x * blockDim.y * blockDim.z;
+      int threads = __syncthreads_count(1);
       for (int i = threadId; i < blocks; i += threads) {
         temp += m_blockdata->values[i];
       }
@@ -1442,7 +1442,7 @@ public:
 
       CudaReductionLocType<T> lmin = m_reduced_val.tally;
       int blocks = gridDim.x * gridDim.y * gridDim.z;
-      int threads = blockDim.x * blockDim.y * blockDim.z;
+      int threads = __syncthreads_count(1);
       for (int i = threadId; i < blocks; i += threads) {
         RAJA_CUDA_MINLOC( lmin.val, lmin.idx,
                           lmin.val, lmin.idx,
@@ -1733,7 +1733,7 @@ public:
 
       CudaReductionLocType<T> lmax = m_reduced_val.tally;
       int blocks = gridDim.x * gridDim.y * gridDim.z;
-      int threads = blockDim.x * blockDim.y * blockDim.z;
+      int threads = __syncthreads_count(1);
       for (int i = threadId; i < blocks; i += threads) {
         RAJA_CUDA_MAXLOC( lmax.val, lmax.idx,
                           lmax.val, lmax.idx,
