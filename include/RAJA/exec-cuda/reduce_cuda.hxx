@@ -1269,11 +1269,9 @@ public:
     m_blockdata = static_cast<CudaReductionLocBlockType<T>*>(getCudaReductionMemBlock(m_myID));
     m_tallydata = static_cast<CudaReductionLocTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
 
-    rajaCudaMemsetType<T, Index_type, CudaReductionLocTallyType<T>, GridSizeType>
-      <<<((RAJA_CUDA_REDUCE_BLOCK_LENGTH+RAJA_CUDA_REDUCE_BLOCK_LENGTH+1+1+BLOCK_SIZE-1)/BLOCK_SIZE), BLOCK_SIZE>>>
-      ( &m_blockdata->values[0], init_val, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
-        &m_blockdata->indices[0], init_loc, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
-        m_tallydata, m_reduced_val, 1,
+    rajaCudaMemsetType<CudaReductionLocTallyType<T>, GridSizeType>
+      <<<2, 1>>>
+      ( m_tallydata, m_reduced_val, 1,
         &retiredBlocks[m_myID], static_cast<GridSizeType>(0), 1 );
   }
 
@@ -1426,9 +1424,9 @@ public:
                         sd_val[threadId], sd_idx[threadId],
                         sd_val[threadId + 1], sd_idx[threadId + 1]);
 
-      RAJA_CUDA_MINLOC( m_blockdata->values[blockId], m_blockdata->indices[blockId],
-                        m_blockdata->values[blockId], m_blockdata->indices[blockId],
-                        sd_val[threadId], sd_idx[threadId]);
+      m_blockdata->values[blockId] = sd_val[threadId];
+      m_blockdata->indices[blockId] = sd_idx[threadId];
+
       __threadfence();
       unsigned int oldBlockCount = atomicAdd((unsigned int*)&retiredBlocks[m_myID], (unsigned int)1); // use atomicInc instead
       lastBlock = (oldBlockCount == ((gridDim.x * gridDim.y * gridDim.z)- 1));
@@ -1559,11 +1557,9 @@ public:
     m_blockdata = static_cast<CudaReductionLocBlockType<T>*>(getCudaReductionMemBlock(m_myID));
     m_tallydata = static_cast<CudaReductionLocTallyType<T>*>(getCudaReductionTallyBlock(m_myID));
 
-    rajaCudaMemsetType<T, Index_type, CudaReductionLocTallyType<T>, GridSizeType>
-      <<<((RAJA_CUDA_REDUCE_BLOCK_LENGTH+RAJA_CUDA_REDUCE_BLOCK_LENGTH+1+1+BLOCK_SIZE-1)/BLOCK_SIZE), BLOCK_SIZE>>>
-      ( &m_blockdata->values[0], init_val, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
-        &m_blockdata->indices[0], init_loc, RAJA_CUDA_REDUCE_BLOCK_LENGTH,
-        m_tallydata, m_reduced_val, 1,
+    rajaCudaMemsetType<CudaReductionLocTallyType<T>, GridSizeType>
+      <<<2, 1>>>
+      ( m_tallydata, m_reduced_val, 1,
         &retiredBlocks[m_myID], static_cast<GridSizeType>(0), 1 );
   }
 
@@ -1717,9 +1713,9 @@ public:
                         sd_val[threadId], sd_idx[threadId],
                         sd_val[threadId + 1], sd_idx[threadId + 1] );
 
-      RAJA_CUDA_MAXLOC( m_blockdata->values[blockId], m_blockdata->indices[blockId],
-                        m_blockdata->values[blockId], m_blockdata->indices[blockId],
-                        sd_val[threadId], sd_idx[threadId] );
+      m_blockdata->values[blockId] = sd_val[threadId];
+      m_blockdata->indices[blockId] = sd_idx[threadId];
+
       __threadfence();
       unsigned int oldBlockCount = atomicAdd((unsigned int*)&retiredBlocks[m_myID], (unsigned int)1);
       lastBlock = (oldBlockCount == ((gridDim.x * gridDim.y * gridDim.z) - 1));
