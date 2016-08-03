@@ -109,12 +109,12 @@ int main(int argc, char *argv[])
           cout << "\n TEST 1 FAILURE: tcount, k = " << tcount << " , " << k
                << endl;
           cout << "  droll = " << droll << endl;
-          cout << "\tdmax0 = " << static_cast<double>(dmax0.get()) << " ("
-               << dcurrentMax.val << ") " << endl;
-          cout << "\tdmax1 = " << static_cast<double>(dmax1.get()) << " ("
-               << 2 * dcurrentMax.val << ") " << endl;
-          cout << "\tdmax2 = " << static_cast<double>(dmax2.get()) << " ("
-               << BIG_MAX << ") " << endl;
+          cout << "\tdmax0 = " << static_cast<double>(dmax0.get()) << ", " << dmax0.getLoc() << " ("
+               << dcurrentMax.val << ", " << dcurrentMax.idx << ") " << endl;
+          cout << "\tdmax1 = " << static_cast<double>(dmax1.get()) << ", " << dmax1.getLoc() << " ("
+               << 2 * dcurrentMax.val << ", " << dcurrentMax.idx << ") " << endl;
+          cout << "\tdmax2 = " << static_cast<double>(dmax2.get()) << ", " << dmax2.getLoc() << " ("
+               << BIG_MAX << ", " << -1 << ") " << endl;
         } else {
           s_ntests_passed++;
         }
@@ -163,10 +163,10 @@ int main(int argc, char *argv[])
           || dmax1.getLoc() != dcurrentMax.idx) {
         cout << "\n TEST 2 FAILURE: tcount = " << tcount << endl;
         cout << "  droll = " << droll << endl;
-        cout << "\tdmax0 = " << static_cast<double>(dmax0) << " ("
-             << dcurrentMax.val << ") " << endl;
-        cout << "\tdmax1 = " << static_cast<double>(dmax1) << " ("
-             << 2 * dcurrentMax.val << ") " << endl;
+        cout << "\tdmax0 = " << static_cast<double>(dmax0) << ", " << dmax0.getLoc() << " ("
+             << dcurrentMax.val << ", " << dcurrentMax.idx << ") " << endl;
+        cout << "\tdmax1 = " << static_cast<double>(dmax1) << ", " << dmax1.getLoc() << " ("
+             << 2 * dcurrentMax.val << ", " << dcurrentMax.idx << ") " << endl;
       } else {
         s_ntests_passed++;
       }
@@ -229,10 +229,10 @@ int main(int argc, char *argv[])
           || dmax1.getLoc() != dcurrentMax.idx) {
         cout << "\n TEST 3 FAILURE: tcount = " << tcount << endl;
         cout << "  droll = " << droll << endl;
-        cout << "\tdmax0 = " << static_cast<double>(dmax0) << " ("
-             << dcurrentMax.val << ") " << endl;
-        cout << "\tdmax1 = " << static_cast<double>(dmax1) << " ("
-             << 2 * dcurrentMax.val << ") " << endl;
+        cout << "\tdmax0 = " << static_cast<double>(dmax0) << ", " << dmax0.getLoc() << " ("
+             << dcurrentMax.val << ", " << dcurrentMax.idx << ") " << endl;
+        cout << "\tdmax1 = " << static_cast<double>(dmax1) << ", " << dmax1.getLoc() << " ("
+             << 2 * dcurrentMax.val << ", " << dcurrentMax.idx << ") " << endl;
       } else {
         s_ntests_passed++;
       }

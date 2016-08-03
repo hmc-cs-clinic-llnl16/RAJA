@@ -112,12 +112,12 @@ int main(int argc, char *argv[])
           cout << "\n TEST 1 FAILURE: tcount, k = " << tcount << " , " << k
                << endl;
           cout << "  droll = " << droll << endl;
-          cout << "\tdmin0 = " << static_cast<double>(dmin0.get()) << " ("
-               << dcurrentMin.val << ") " << endl;
-          cout << "\tdmin1 = " << static_cast<double>(dmin1.get()) << " ("
-               << 2 * dcurrentMin.val << ") " << endl;
-          cout << "\tdmin2 = " << static_cast<double>(dmin2.get()) << " ("
-               << BIG_MIN << ") " << endl;
+          cout << "\tdmin0 = " << static_cast<double>(dmin0.get()) << ", " << dmin0.getLoc() << " ("
+               << dcurrentMin.val << ", " << dcurrentMin.idx << ") " << endl;
+          cout << "\tdmin1 = " << static_cast<double>(dmin1.get()) << ", " << dmin1.getLoc() << " ("
+               << 2 * dcurrentMin.val << ", " << dcurrentMin.idx << ") " << endl;
+          cout << "\tdmin2 = " << static_cast<double>(dmin2.get()) << ", " << dmin2.getLoc() << " ("
+               << BIG_MIN << ", " << -1 << ") " << endl;
         } else {
           s_ntests_passed++;
         }
@@ -166,10 +166,10 @@ int main(int argc, char *argv[])
           || dmin1.getLoc() != dcurrentMin.idx) {
         cout << "\n TEST 2 FAILURE: tcount = " << tcount << endl;
         cout << "   droll = " << droll << endl;
-        cout << "\tdmin0 = " << static_cast<double>(dmin0) << " ("
-             << dcurrentMin.val << ") " << endl;
-        cout << "\tdmin1 = " << static_cast<double>(dmin1) << " ("
-             << 2 * dcurrentMin.val << ") " << endl;
+        cout << "\tdmin0 = " << static_cast<double>(dmin0) << ", " << dmin0.getLoc() << " ("
+             << dcurrentMin.val << ", " << dcurrentMin.idx << ") " << endl;
+        cout << "\tdmin1 = " << static_cast<double>(dmin1) << ", " << dmin1.getLoc() << " ("
+             << 2 * dcurrentMin.val << ", " << dcurrentMin.idx << ") " << endl;
       } else {
         s_ntests_passed++;
       }
@@ -234,10 +234,10 @@ int main(int argc, char *argv[])
           || dmin1.getLoc() != dcurrentMin.idx) {
         cout << "\n TEST 3 FAILURE: tcount = " << tcount << endl;
         cout << "   droll = " << droll << endl;
-        cout << "\tdmin0 = " << static_cast<double>(dmin0) << " ("
-             << dcurrentMin.val << ") " << endl;
-        cout << "\tdmin1 = " << static_cast<double>(dmin1) << " ("
-             << 2 * dcurrentMin.val << ") " << endl;
+        cout << "\tdmin0 = " << static_cast<double>(dmin0) << ", " << dmin0.getLoc() << " ("
+             << dcurrentMin.val << ", " << dcurrentMin.idx << ") " << endl;
+        cout << "\tdmin1 = " << static_cast<double>(dmin1) << ", " << dmin1.getLoc() << " ("
+             << 2 * dcurrentMin.val << ", " << dcurrentMin.idx << ") " << endl;
       } else {
         s_ntests_passed++;
       }
