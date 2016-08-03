@@ -243,6 +243,64 @@ int main(int argc, char *argv[])
       }
 
     }  // end test 3
+
+    ///////////////////////////////////////////////////////////////////////
+
+    //
+    // test 4 runs 1 reductions over a chunk that causes only some threads
+    // of the last block to run. This test checks if the reduction is 
+    // correct despite the block that does the final reduction having less
+    // than the full amount of threads running.  This test may fail only
+    // intermittently.
+    //
+    {  // begin test 4
+
+      s_ntests_run++;
+
+      cudaDeviceSynchronize(); // get() no longer synchs UM
+
+      for (int i = 0; i < TEST_VEC_LEN; ++i) {
+        dvalue[i] = DBL_MAX;
+      }
+
+      dcurrentMin.val = DBL_MAX;
+      dcurrentMin.idx = -1;
+
+      RangeSegment seg0(1, block_size * block_size - 1 + 1);
+
+      IndexSet iset;
+      iset.push_back(seg0);
+
+      ReduceMinLoc<cuda_reduce<block_size>, double> dmin0(DBL_MAX, -1);
+
+      // pick an index in one of the segments
+      int index = block_size * block_size - 2;     // seg 0
+
+      cudaDeviceSynchronize(); // get() no longer synchs UM
+
+      double droll = dist(mt);
+      dvalue[index] = droll;
+
+      minloc_t lmin = {droll, index};
+      dvalue[index] = droll;
+      dcurrentMin = RAJA_MINLOC(dcurrentMin, lmin);
+
+      forall<IndexSet::ExecPolicy<seq_segit, cuda_exec<block_size> > >(
+          iset, [=] __device__(int i) {
+            dmin0.minloc(dvalue[i], i);
+          });
+
+      if (double(dmin0) != dcurrentMin.val
+          || dmin0.getLoc() != dcurrentMin.idx) {
+        cout << "\n TEST 4 FAILURE: tcount = " << tcount << endl;
+        cout << "   droll = " << droll << endl;
+        cout << "\tdmin0 = " << static_cast<double>(dmin0) << ", " << dmin0.getLoc() << " ("
+             << dcurrentMin.val << ", " << dcurrentMin.idx << ") " << endl;
+      } else {
+        s_ntests_passed++;
+      }
+
+    }  // end test 4
   }    // end test repeat loop
 
   ///
