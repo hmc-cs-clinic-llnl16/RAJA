@@ -635,29 +635,14 @@ public:
       __syncthreads();
     }
 
-    if (threadId < 16) {
-      sd[threadId] = RAJA_MIN(sd[threadId], sd[threadId + 16]);
+    for (int i = WARP_SIZE / 2; i > 0; i /= 2) {
+      if (threadId < i) {
+        sd[threadId] = RAJA_MIN(sd[threadId], sd[threadId + i]);
+      }
     }
-    __syncthreads();
-
-    if (threadId < 8) {
-      sd[threadId] = RAJA_MIN(sd[threadId], sd[threadId + 8]);
-    }
-    __syncthreads();
-
-    if (threadId < 4) {
-      sd[threadId] = RAJA_MIN(sd[threadId], sd[threadId + 4]);
-    }
-    __syncthreads();
-
-    if (threadId < 2) {
-      sd[threadId] = RAJA_MIN(sd[threadId], sd[threadId + 2]);
-    }
-    __syncthreads();
 
     if (threadId < 1) {
-      sd[0] = RAJA_MIN(sd[0], sd[1]);
-      _atomicMin<T>(&(m_tally_device->tally), sd[0]);
+      _atomicMin<T>(&m_tally_device->tally, sd[threadId]);
     }
 
     return *this;
@@ -793,29 +778,14 @@ public:
       __syncthreads();
     }
 
-    if (threadId < 16) {
-      sd[threadId] = RAJA_MAX(sd[threadId], sd[threadId + 16]);
+    for (int i = WARP_SIZE / 2; i > 0; i /= 2) {
+      if (threadId < i) {
+        sd[threadId] = RAJA_MAX(sd[threadId], sd[threadId + i]);
+      }
     }
-    __syncthreads();
-
-    if (threadId < 8) {
-      sd[threadId] = RAJA_MAX(sd[threadId], sd[threadId + 8]);
-    }
-    __syncthreads();
-
-    if (threadId < 4) {
-      sd[threadId] = RAJA_MAX(sd[threadId], sd[threadId + 4]);
-    }
-    __syncthreads();
-
-    if (threadId < 2) {
-      sd[threadId] = RAJA_MAX(sd[threadId], sd[threadId + 2]);
-    }
-    __syncthreads();
 
     if (threadId < 1) {
-      sd[0] = RAJA_MAX(sd[0], sd[1]);
-      _atomicMax<T>(&(m_tally_device->tally), sd[0]);
+      _atomicMax<T>(&m_tally_device->tally, sd[threadId]);
     }
 
     return *this;
@@ -974,14 +944,13 @@ public:
     }
 
     bool lastBlock = false;
-
     if (threadId < 1) {
       // write data to gmem block
       m_blockdata->values[blockId] = temp;
       // ensure write visible to all threadblocks
       __threadfence();
       // increment counter, (wraps back to zero at second parameter)
-      unsigned int oldBlockCount = atomicInc((unsigned int*)(void**)&m_tally_device->retiredBlocks, ((gridDim.x * gridDim.y * gridDim.z) - 1));
+      unsigned int oldBlockCount = atomicInc((unsigned int*)&m_tally_device->retiredBlocks, ((gridDim.x * gridDim.y * gridDim.z) - 1));
       lastBlock = (oldBlockCount == ((gridDim.x * gridDim.y * gridDim.z) - 1));
     }
 
@@ -1311,7 +1280,6 @@ public:
   {
     __shared__ T sd_val[BLOCK_SIZE];
     __shared__ Index_type sd_idx[BLOCK_SIZE];
-    __shared__ bool lastBlock;
 
     int blockId = blockIdx.x + blockIdx.y * gridDim.x
                   + gridDim.x * gridDim.y * blockIdx.z;
@@ -1347,54 +1315,26 @@ public:
       __syncthreads();
     }
 
-    if (threadId < 16) {
-      RAJA_CUDA_MINLOC( sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId + 16], sd_idx[threadId + 16]);
+    for (int i = WARP_SIZE / 2; i > 0; i /= 2) {
+      if (threadId < i) {
+        RAJA_CUDA_MINLOC( sd_val[threadId], sd_idx[threadId],
+                          sd_val[threadId], sd_idx[threadId],
+                          sd_val[threadId + i], sd_idx[threadId + i]);
+      }
     }
-    __syncthreads();
 
-    if (threadId < 8) {
-      RAJA_CUDA_MINLOC( sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId + 8], sd_idx[threadId + 8]);
-    }
-    __syncthreads();
-
-    if (threadId < 4) {
-      RAJA_CUDA_MINLOC( sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId + 4], sd_idx[threadId + 4]);
-    }
-    __syncthreads();
-
-    if (threadId < 2) {
-      RAJA_CUDA_MINLOC( sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId + 2], sd_idx[threadId + 2]);
-    }
-    __syncthreads();
-
+    bool lastBlock = false;
     if (threadId < 1) {
-      lastBlock = false;
-      RAJA_CUDA_MINLOC( sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId + 1], sd_idx[threadId + 1]);
-
       m_blockdata->values[blockId] = sd_val[threadId];
       m_blockdata->indices[blockId] = sd_idx[threadId];
 
       __threadfence();
-      unsigned int oldBlockCount = atomicAdd((unsigned int*)(void**)&m_tally_device->retiredBlocks, (unsigned int)1); // use atomicInc instead
+      unsigned int oldBlockCount = atomicInc((unsigned int*)&m_tally_device->retiredBlocks, ((gridDim.x * gridDim.y * gridDim.z)- 1));
       lastBlock = (oldBlockCount == ((gridDim.x * gridDim.y * gridDim.z)- 1));
     }
-    __syncthreads();
+    lastBlock = __syncthreads_or(lastBlock);
 
     if (lastBlock) {
-      if (threadId == 0) {
-        m_tally_device->retiredBlocks = 0; // not necessary if using atomicInc
-      }
-
       CudaReductionLocType<T> lmin = m_tally_device->tally;
       int blocks = gridDim.x * gridDim.y * gridDim.z;
       int threads = __syncthreads_count(1);
@@ -1416,39 +1356,15 @@ public:
         __syncthreads();
       }
 
-      if (threadId < 16) {
-        RAJA_CUDA_MINLOC( sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId + 16], sd_idx[threadId + 16]);
+      for (int i = WARP_SIZE / 2; i > 0; i /= 2) {
+        if (threadId < i) {
+          RAJA_CUDA_MINLOC( sd_val[threadId], sd_idx[threadId],
+                            sd_val[threadId], sd_idx[threadId],
+                            sd_val[threadId + i], sd_idx[threadId + i]);
+        }
       }
-      __syncthreads();
-
-      if (threadId < 8) {
-        RAJA_CUDA_MINLOC( sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId + 8], sd_idx[threadId + 8]);
-      }
-      __syncthreads();
-
-      if (threadId < 4) {
-        RAJA_CUDA_MINLOC( sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId + 4], sd_idx[threadId + 4]);
-      }
-      __syncthreads();
-
-      if (threadId < 2) {
-        RAJA_CUDA_MINLOC( sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId + 2], sd_idx[threadId + 2]);
-      }
-      __syncthreads();
 
       if (threadId < 1) {
-        RAJA_CUDA_MINLOC( sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId + 1], sd_idx[threadId + 1]);
-
         RAJA_CUDA_MINLOC( m_tally_device->tally.val, m_tally_device->tally.idx,
                           m_tally_device->tally.val, m_tally_device->tally.idx,
                           sd_val[threadId], sd_idx[threadId]);
@@ -1585,7 +1501,6 @@ public:
   {
     __shared__ T sd_val[BLOCK_SIZE];
     __shared__ Index_type sd_idx[BLOCK_SIZE];
-    __shared__ bool lastBlock;
 
     int blockId = blockIdx.x + blockIdx.y * gridDim.x
                   + gridDim.x * gridDim.y * blockIdx.z;
@@ -1622,54 +1537,26 @@ public:
       __syncthreads();
     }
 
-    if (threadId < 16) {
-      RAJA_CUDA_MAXLOC( sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId + 16], sd_idx[threadId + 16] );
+    for (int i = WARP_SIZE / 2; i > 0; i /= 2) {
+      if (threadId < i) {
+        RAJA_CUDA_MAXLOC( sd_val[threadId], sd_idx[threadId],
+                          sd_val[threadId], sd_idx[threadId],
+                          sd_val[threadId + i], sd_idx[threadId + i] );
+      }
     }
-    __syncthreads();
 
-    if (threadId < 8) {
-      RAJA_CUDA_MAXLOC( sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId + 8], sd_idx[threadId + 8] );
-    }
-    __syncthreads();
-
-    if (threadId < 4) {
-      RAJA_CUDA_MAXLOC( sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId + 4], sd_idx[threadId + 4] );
-    }
-    __syncthreads();
-
-    if (threadId < 2) {
-      RAJA_CUDA_MAXLOC( sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId + 2], sd_idx[threadId + 2] );
-    }
-    __syncthreads();
-
+    bool lastBlock = false;
     if (threadId < 1) {
-      lastBlock = false;
-      RAJA_CUDA_MAXLOC( sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId], sd_idx[threadId],
-                        sd_val[threadId + 1], sd_idx[threadId + 1] );
-
       m_blockdata->values[blockId] = sd_val[threadId];
       m_blockdata->indices[blockId] = sd_idx[threadId];
 
       __threadfence();
-      unsigned int oldBlockCount = atomicAdd((unsigned int*)(void**)&m_tally_device->retiredBlocks, (unsigned int)1);
+      unsigned int oldBlockCount = atomicInc((unsigned int*)&m_tally_device->retiredBlocks, ((gridDim.x * gridDim.y * gridDim.z) - 1));
       lastBlock = (oldBlockCount == ((gridDim.x * gridDim.y * gridDim.z) - 1));
     }
-    __syncthreads();
+    lastBlock = __syncthreads_or(lastBlock);
 
     if (lastBlock) {
-      if (threadId == 0) {
-        m_tally_device->retiredBlocks = 0;
-      }
-
       CudaReductionLocType<T> lmax = m_tally_device->tally;
       int blocks = gridDim.x * gridDim.y * gridDim.z;
       int threads = __syncthreads_count(1);
@@ -1691,39 +1578,15 @@ public:
         __syncthreads();
       }
 
-      if (threadId < 16) {
-        RAJA_CUDA_MAXLOC( sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId + 16], sd_idx[threadId + 16] );
+      for (int i = WARP_SIZE / 2; i > 0; i /= 2) {
+        if (threadId < i) {
+          RAJA_CUDA_MAXLOC( sd_val[threadId], sd_idx[threadId],
+                            sd_val[threadId], sd_idx[threadId],
+                            sd_val[threadId + i], sd_idx[threadId + i] );
+        }
       }
-      __syncthreads();
-
-      if (threadId < 8) {
-        RAJA_CUDA_MAXLOC( sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId + 8], sd_idx[threadId + 8] );
-      }
-      __syncthreads();
-
-      if (threadId < 4) {
-        RAJA_CUDA_MAXLOC( sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId + 4], sd_idx[threadId + 4] );
-      }
-      __syncthreads();
-
-      if (threadId < 2) {
-        RAJA_CUDA_MAXLOC( sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId + 2], sd_idx[threadId + 2] );
-      }
-      __syncthreads();
 
       if (threadId < 1) {
-        RAJA_CUDA_MAXLOC( sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId], sd_idx[threadId],
-                          sd_val[threadId + 1], sd_idx[threadId + 1] );
-
         RAJA_CUDA_MAXLOC( m_tally_device->tally.val, m_tally_device->tally.idx,
                           m_tally_device->tally.val, m_tally_device->tally.idx,
                           sd_val[threadId], sd_idx[threadId] );
