@@ -78,17 +78,21 @@ static bool cuda_reduction_id_used[RAJA_MAX_REDUCE_VARS];
 //
 // Pointer to hold shared managed memory block for RAJA-Cuda reductions.
 //
-CudaReductionDummyBlockType* s_cuda_reduction_mem_block = 0;
+static CudaReductionDummyBlockType* s_cuda_reduction_mem_block = 0;
 
 //
 // Tally cache on the CPU
 //
-CudaReductionDummyTallyType* s_cuda_reduction_tally_block_host = 0;
+static CudaReductionDummyTallyType* s_cuda_reduction_tally_block_host = 0;
 
 //
 // Tally blocks on the device
 //
-CudaReductionDummyTallyType* s_cuda_reduction_tally_block_device = 0;
+static CudaReductionDummyTallyType* s_cuda_reduction_tally_block_device = 0;
+
+static bool tally_valid = true;
+static bool tally_dirty = false;
+static bool tally_block_dirty[RAJA_CUDA_REDUCE_TALLY_LENGTH] = {false};
 /*
 *************************************************************************
 *
@@ -136,6 +140,7 @@ void releaseCudaReductionId(int id)
 {
   if (id < RAJA_MAX_REDUCE_VARS) {
     cuda_reduction_id_used[id] = false;
+    tally_block_dirty[id] = false;
   }
 }
 
@@ -181,9 +186,7 @@ void freeCudaReductionMemBlock()
   }
 }
 
-static bool tally_valid = true;
-static bool tally_dirty = false;
-static bool tally_block_dirty[RAJA_CUDA_REDUCE_TALLY_LENGTH] = {false};
+
 
 /*
 *************************************************************************
@@ -266,13 +269,24 @@ static void writeBackCudaReductionTallyBlock()
 *
 *************************************************************************
 */
-static void readCudaReductionTallyBlock()
+static void readCudaReductionTallyBlockAsync()
 {
   if (!tally_valid) {
     cudaErrchk(cudaMemcpyAsync( &s_cuda_reduction_tally_block_host[0],
                                 &s_cuda_reduction_tally_block_device[0],
                                 sizeof(CudaReductionDummyTallyType) * RAJA_CUDA_REDUCE_TALLY_LENGTH,
                                 cudaMemcpyDeviceToHost, 0 ));
+    tally_valid = true;
+  }
+}
+
+static void readCudaReductionTallyBlock()
+{
+  if (!tally_valid) {
+    cudaErrchk(cudaMemcpy(  &s_cuda_reduction_tally_block_host[0],
+                            &s_cuda_reduction_tally_block_device[0],
+                            sizeof(CudaReductionDummyTallyType) * RAJA_CUDA_REDUCE_TALLY_LENGTH,
+                            cudaMemcpyDeviceToHost));
     tally_valid = true;
   }
 }
@@ -301,6 +315,12 @@ void onKernelLaunchCudaReduceTallyBlock()
 *
 *************************************************************************
 */
+void onReadLaunchCudaReduceTallyBlockAsync()
+{
+  writeBackCudaReductionTallyBlock();
+  readCudaReductionTallyBlockAsync();
+}
+
 void onReadLaunchCudaReduceTallyBlock()
 {
   writeBackCudaReductionTallyBlock();
