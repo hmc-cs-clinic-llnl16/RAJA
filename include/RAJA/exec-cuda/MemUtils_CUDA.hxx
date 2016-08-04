@@ -87,8 +87,6 @@ struct CudaReductionDummyDataType {
 
 struct RAJA_STRUCT_ALIGNAS CudaReductionDummyBlockType {
 	CudaReductionDummyDataType values[RAJA_CUDA_REDUCE_BLOCK_LENGTH];
-	CudaReductionDummyDataType maxGridSize;
-	CudaReductionDummyDataType extraSafetyDummy;
 };
 
 struct CudaReductionDummyTallyType {
@@ -100,6 +98,13 @@ typedef unsigned int GridSizeType;
 
 /// types used to simplify typed memory use in reductions
 /// these types fit within the dummy types, checked in static asserts in reduction classes
+///
+/// Each ReduceSum, ReduceMinLoc, or ReduceMaxLoc object uses retiredBlocks
+/// as a way to complete the reduction in a single pass. Although the algorithm
+/// updates retiredBlocks via an atomicAdd(int) the actual reduction values
+/// do not use atomics and require a finishing stage performed
+/// by the last block.
+///
 template<typename T>
 struct RAJA_STRUCT_ALIGNAS CudaReductionBlockType {
 	T values[RAJA_CUDA_REDUCE_BLOCK_LENGTH];
@@ -121,6 +126,7 @@ template<typename T>
 struct CudaReductionTallyType {
 	T tally;
 	GridSizeType maxGridSize;
+	GridSizeType retiredBlocks;
 };
 
 template<typename T>
@@ -132,6 +138,7 @@ template<typename T>
 struct CudaReductionLocTallyType {
 	CudaReductionLocType<T> tally;
 	GridSizeType maxGridSize;
+	GridSizeType retiredBlocks;
 };
 
 
@@ -154,7 +161,11 @@ int getCudaReductionId();
 */
 void releaseCudaReductionId(int id);
 
-void* getCudaReductionTallyBlock(int id);
+void getCudaReductionTallyBlock(int id, void** host_tally, void** device_tally);
+
+void onKernelLaunchCudaReduceTallyBlock();
+
+void onReadLaunchCudaReduceTallyBlock();
 
 /*!
  ******************************************************************************
@@ -187,7 +198,7 @@ void freeCudaReductionTallyBlock();
  ******************************************************************************
  */
  
-void* getCudaReductionMemBlock(int id);
+void getCudaReductionMemBlock(int id, void** device_memblock);
 
 /*!
  ******************************************************************************

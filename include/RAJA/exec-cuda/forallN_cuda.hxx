@@ -325,6 +325,8 @@ struct ForallN_Executor<ForallN_PolicyPair<CudaPolicy<CuARG0>, ISET0>,
   template <typename BODY>
   RAJA_INLINE void operator()(BODY body) const
   {
+    onKernelLaunchCudaReduceTallyBlock();
+
     unpackIndexSets(body, typename gen_sequence<sizeof...(CuARGS)>::type());
   }
 
@@ -363,6 +365,8 @@ struct ForallN_Executor<ForallN_PolicyPair<CudaPolicy<CuARG0>, ISET0>> {
   template <typename BODY>
   RAJA_INLINE void operator()(BODY body) const
   {
+    onKernelLaunchCudaReduceTallyBlock();
+    
     CudaDim dims;
     CuARG0 c0(dims, iset0);
 

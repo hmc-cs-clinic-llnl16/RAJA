@@ -65,6 +65,8 @@
 
 #include "RAJA/fault_tolerance.hxx"
 
+#include "RAJA/exec-cuda/MemUtils_CUDA.hxx"
+
 #include "RAJA/exec-cuda/raja_cudaerrchk.hxx"
 
 namespace RAJA
@@ -129,6 +131,8 @@ RAJA_INLINE void forall(cuda_exec<BLOCK_SIZE, Async>,
                         Iterable&& iter,
                         LOOP_BODY loop_body)
 {
+  onKernelLaunchCudaReduceTallyBlock();
+
   auto begin = std::begin(iter);
   auto end = std::end(iter);
   Index_type len = std::distance(begin, end);
@@ -154,6 +158,8 @@ RAJA_INLINE void forall_Icount(cuda_exec<BLOCK_SIZE, Async>,
                                Index_type icount,
                                LOOP_BODY loop_body)
 {
+  onKernelLaunchCudaReduceTallyBlock();
+
   auto begin = std::begin(iter);
   auto end = std::end(iter);
   Index_type len = std::distance(begin, end);
