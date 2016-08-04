@@ -157,9 +157,8 @@ void getCudaReductionMemBlock(int id, void** device_memblock)
   //
 
   if (s_cuda_reduction_mem_block == 0) {
-    cudaErrchk(cudaMallocManaged((void**)&s_cuda_reduction_mem_block,
-                                 sizeof(CudaReductionDummyBlockType) * RAJA_MAX_REDUCE_VARS,
-                                 cudaMemAttachGlobal));
+    cudaErrchk(cudaMalloc((void**)&s_cuda_reduction_mem_block,
+                          sizeof(CudaReductionDummyBlockType) * RAJA_MAX_REDUCE_VARS));
 
     atexit(freeCudaReductionMemBlock);
   }
@@ -201,9 +200,8 @@ void getCudaReductionTallyBlock(int id, void** host_tally, void** device_tally)
   if (s_cuda_reduction_tally_block_host == 0) {
     s_cuda_reduction_tally_block_host = new CudaReductionDummyTallyType[RAJA_CUDA_REDUCE_TALLY_LENGTH];
 
-    cudaErrchk(cudaMallocManaged((void**)&s_cuda_reduction_tally_block_device,
-                                 sizeof(CudaReductionDummyTallyType) * RAJA_CUDA_REDUCE_TALLY_LENGTH,
-                                 cudaMemAttachGlobal));
+    cudaErrchk(cudaMalloc((void**)&s_cuda_reduction_tally_block_device,
+                          sizeof(CudaReductionDummyTallyType) * RAJA_CUDA_REDUCE_TALLY_LENGTH));
 
     tally_valid = true;
     tally_dirty = false;
