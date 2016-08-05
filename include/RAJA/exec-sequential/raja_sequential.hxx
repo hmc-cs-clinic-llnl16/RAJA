@@ -98,7 +98,7 @@ struct seq_reduce {
 ///////////////////////////////////////////////////////////////////////
 ///
 struct seq_wait {
-	void operator()() {
+	static void sync() {
 		// do nothing
 	}
 };

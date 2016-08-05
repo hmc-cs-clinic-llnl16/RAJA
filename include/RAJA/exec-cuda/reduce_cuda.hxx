@@ -477,6 +477,7 @@ public:
     if (!m_is_copy) {
 #if defined(__CUDA_ARCH__)
 #else
+      releaseCudaReductionTallyBlock(m_myID);
       releaseCudaReductionId(m_myID);
 #endif
     }
@@ -620,6 +621,7 @@ public:
     if (!m_is_copy) {
 #if defined(__CUDA_ARCH__)
 #else
+      releaseCudaReductionTallyBlock(m_myID);
       releaseCudaReductionId(m_myID);
 #endif
     }
@@ -766,6 +768,7 @@ public:
     if (!m_is_copy) {
 #if defined(__CUDA_ARCH__)
 #else
+      releaseCudaReductionTallyBlock(m_myID);
       releaseCudaReductionId(m_myID);
 #endif
     }
@@ -964,6 +967,7 @@ public:
     if (!m_is_copy) {
 #if defined(__CUDA_ARCH__)
 #else
+      releaseCudaReductionTallyBlock(m_myID);
       releaseCudaReductionId(m_myID);
 #endif
     }
@@ -1129,6 +1133,7 @@ public:
     if (!m_is_copy) {
 #if defined(__CUDA_ARCH__)
 #else
+      releaseCudaReductionTallyBlock(m_myID);
       releaseCudaReductionId(m_myID);
 #endif
     }
@@ -1350,6 +1355,7 @@ public:
     if (!m_is_copy) {
 #if defined(__CUDA_ARCH__)
 #else
+      releaseCudaReductionTallyBlock(m_myID);
       releaseCudaReductionId(m_myID);
 #endif
     }
@@ -1578,6 +1584,7 @@ public:
     if (!m_is_copy) {
 #if defined(__CUDA_ARCH__)
 #else
+      releaseCudaReductionTallyBlock(m_myID);
       releaseCudaReductionId(m_myID);
 #endif
     }
@@ -1721,6 +1728,7 @@ public:
     if (!m_is_copy) {
 #if defined(__CUDA_ARCH__)
 #else
+      releaseCudaReductionTallyBlock(m_myID);
       releaseCudaReductionId(m_myID);
 #endif
     }
@@ -1867,6 +1875,7 @@ public:
     if (!m_is_copy) {
 #if defined(__CUDA_ARCH__)
 #else
+      releaseCudaReductionTallyBlock(m_myID);
       releaseCudaReductionId(m_myID);
 #endif
     }
@@ -2065,6 +2074,7 @@ public:
     if (!m_is_copy) {
 #if defined(__CUDA_ARCH__)
 #else
+      releaseCudaReductionTallyBlock(m_myID);
       releaseCudaReductionId(m_myID);
 #endif
     }
@@ -2230,6 +2240,7 @@ public:
     if (!m_is_copy) {
 #if defined(__CUDA_ARCH__)
 #else
+      releaseCudaReductionTallyBlock(m_myID);
       releaseCudaReductionId(m_myID);
 #endif
     }
@@ -2451,6 +2462,7 @@ public:
     if (!m_is_copy) {
 #if defined(__CUDA_ARCH__)
 #else
+      releaseCudaReductionTallyBlock(m_myID);
       releaseCudaReductionId(m_myID);
 #endif
     }

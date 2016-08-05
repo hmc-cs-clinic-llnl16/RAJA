@@ -163,6 +163,8 @@ void releaseCudaReductionId(int id);
 
 void getCudaReductionTallyBlock(int id, void** host_tally, void** device_tally);
 
+void releaseCudaReductionTallyBlock(int id);
+
 void onKernelLaunchCudaReduceTallyBlock();
 
 void onReadLaunchCudaReduceTallyBlockAsync();

@@ -91,7 +91,7 @@ static CudaReductionDummyTallyType* s_cuda_reduction_tally_block_host = 0;
 static CudaReductionDummyTallyType* s_cuda_reduction_tally_block_device = 0;
 
 static bool tally_valid = true;
-static bool tally_dirty = false;
+static int tally_dirty = 0;
 static bool tally_block_dirty[RAJA_CUDA_REDUCE_TALLY_LENGTH] = {false};
 /*
 *************************************************************************
@@ -207,7 +207,7 @@ void getCudaReductionTallyBlock(int id, void** host_tally, void** device_tally)
                           sizeof(CudaReductionDummyTallyType) * RAJA_CUDA_REDUCE_TALLY_LENGTH));
 
     tally_valid = true;
-    tally_dirty = false;
+    tally_dirty = 0;
     for (int i = 0; i < RAJA_CUDA_REDUCE_TALLY_LENGTH; ++i) {
       tally_block_dirty[i] = false;
     }
@@ -215,7 +215,7 @@ void getCudaReductionTallyBlock(int id, void** host_tally, void** device_tally)
     atexit(freeCudaReductionTallyBlock);
   }
 
-  tally_dirty = true;
+  tally_dirty += 1;
   // set block dirty
   tally_block_dirty[id] = true;
 
@@ -233,7 +233,7 @@ void getCudaReductionTallyBlock(int id, void** host_tally, void** device_tally)
 */
 static void writeBackCudaReductionTallyBlock()
 {
-  if (tally_dirty) {
+  if (tally_dirty > 0) {
     int first = 0;
     while (first < RAJA_CUDA_REDUCE_TALLY_LENGTH) {
       if (tally_block_dirty[first]) {
@@ -255,7 +255,7 @@ static void writeBackCudaReductionTallyBlock()
         first++;
       }
     }
-    tally_dirty = false;
+    tally_dirty = 0;
   }
 }
 
@@ -337,7 +337,10 @@ void onReadLaunchCudaReduceTallyBlock()
 */
 void releaseCudaReductionTallyBlock(int id)
 {
-  tally_block_dirty[id] = false;
+  if (tally_block_dirty[id]) {
+    tally_block_dirty[id] = false;
+    tally_dirty -= 1;
+  }
 }
 
 /*

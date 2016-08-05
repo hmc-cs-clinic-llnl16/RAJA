@@ -168,7 +168,7 @@ struct cuda_reduce_async_atomic {
 ///////////////////////////////////////////////////////////////////////
 ///
 struct cuda_wait {
-  void operator()() {
+  static void sync() {
     cudaDeviceSynchronize();
   }
 };

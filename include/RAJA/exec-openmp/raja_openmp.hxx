@@ -126,7 +126,7 @@ struct omp_reduce {
 ///////////////////////////////////////////////////////////////////////
 ///
 struct omp_wait {
-	void operator()() {
+	static void sync() {
 #pragma omp barrier
 		// this is almost certainly superfluous synchronization
 	}

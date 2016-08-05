@@ -86,8 +86,7 @@ namespace RAJA
 template <typename SYNC_POLICY_T>
 RAJA_INLINE void wait()
 {
-	SYNC_POLICY_T sync;
-	sync();
+	SYNC_POLICY_T::sync();
 }
 
 }  // closing brace for RAJA namespace

@@ -100,7 +100,7 @@ struct cilk_reduce {
 ///////////////////////////////////////////////////////////////////////
 ///
 struct cilk_wait {
-	void operator()() {
+	static void sync() {
 		// TODO if necessary
 	}
 };
