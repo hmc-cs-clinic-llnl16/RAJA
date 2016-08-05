@@ -3,21 +3,25 @@
  *
  * \file
  *
- * \brief   Main RAJA header file.
+ * \brief   Header file containing RAJA wait template methods that take an 
+ *          synchronization policy as a template parameter.
  *
- *          This is the main header file to include in code that uses RAJA.
- *          It includes other RAJA headers files that define types, index
- *          sets, ieration methods, etc.
+ *          The templates for segments support the following usage pattern:
  *
- *          IMPORTANT: If changes are made to this file, note that contents
- *                     of some header files require that they are included
- *                     in the order found here.
+ *             wait<sync_policy>( );
+ *
+ *          The wait function synchronizes execution, ensuring that data
+ *          can be touched for asynchronous policies.
+ *
+ *
+ *          IMPORTANT: Use of any of these methods requires a specialization
+ *                     for the given synchronization policy.
  *
  ******************************************************************************
  */
 
-#ifndef RAJA_HXX
-#define RAJA_HXX
+#ifndef RAJA_wait_generic_HXX
+#define RAJA_wait_generic_HXX
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2016, Lawrence Livermore National Security, LLC.
@@ -61,96 +65,31 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#include "RAJA/config.hxx"
-
-#include "RAJA/internal/defines.hxx"
-
-#include "RAJA/int_datatypes.hxx"
-#include "RAJA/real_datatypes.hxx"
-
-#include "RAJA/reducers.hxx"
-
-#include "RAJA/IndexSet.hxx"
-#include "RAJA/ListSegment.hxx"
-#include "RAJA/RangeSegment.hxx"
-
-//
-// Strongly typed index class.
-//
-#include "RAJA/IndexValue.hxx"
-
-//
-// Generic iteration templates require specializations defined
-// in the files included below.
-//
-#include "RAJA/forall_generic.hxx"
-
-#include "RAJA/wait_generic.hxx"
-
-#if defined(RAJA_ENABLE_NESTED)
-
-//
-// Multidimensional layouts and views.
-//
-#include "RAJA/foralln/Layout.hxx"
-#include "RAJA/foralln/View.hxx"
-
-//
-// Generic iteration templates for perfectly nested loops
-//
-#include "RAJA/foralln/Generic.hxx"
-
-#endif  // defined(RAJA_ENABLE_NESTED)
+namespace RAJA
+{
 
 //
 //////////////////////////////////////////////////////////////////////
 //
-// These contents of the header files included here define index set
-// and segment execution methods whose implementations depend on
-// programming model choice.
-//
-// The ordering of these file inclusions must be preserved since there
-// are dependencies among them.
+// Function template for wait.
 //
 //////////////////////////////////////////////////////////////////////
 //
 
-//
-// All platforms must support sequential execution.
-//
-#include "RAJA/exec-sequential/raja_sequential.hxx"
+/*!
+ ******************************************************************************
+ *
+ * \brief Generic wait.
+ *
+ ******************************************************************************
+ */
+template <typename SYNC_POLICY_T>
+RAJA_INLINE void wait()
+{
+	SYNC_POLICY_T sync;
+	sync();
+}
 
-//
-// All platforms should support simd execution.
-//
-#include "RAJA/exec-simd/raja_simd.hxx"
-
-#if defined(RAJA_ENABLE_CUDA)
-#include "RAJA/exec-cuda/raja_cuda.hxx"
-#endif
-
-#if defined(RAJA_ENABLE_OPENMP)
-#include "RAJA/exec-openmp/raja_openmp.hxx"
-#endif
-
-#if defined(RAJA_ENABLE_CILK)
-#include "RAJA/exec-cilk/raja_cilk.hxx"
-#endif
-
-#include "RAJA/IndexSetUtils.hxx"
-
-#if defined(RAJA_ENABLE_NESTED)
-
-//
-// Perfectly nested loop transformations
-//
-
-// Tiling policies
-#include "RAJA/foralln/Tile.hxx"
-
-// Loop interchange policies
-#include "RAJA/foralln/Permute.hxx"
-
-#endif  // defined(RAJA_ENABLE_NESTED)
+}  // closing brace for RAJA namespace
 
 #endif  // closing endif for header file include guard

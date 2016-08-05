@@ -160,6 +160,20 @@ template <size_t BLOCK_SIZE>
 struct cuda_reduce_async_atomic {
 };
 
+///
+///////////////////////////////////////////////////////////////////////
+///
+/// Synchronization policies
+///
+///////////////////////////////////////////////////////////////////////
+///
+struct cuda_wait {
+  void operator()() {
+    cudaDeviceSynchronize();
+  }
+};
+
+
 //
 // Operations in the included files are parametrized using the following
 // values for CUDA warp size and max block size.

@@ -154,7 +154,7 @@ void runLTimesTest(std::string const &policy,
         pdmaxloc.maxloc(val, index);
       });
 
-  cudaDeviceSynchronize();
+  RAJA::wait<cuda_wait>();
   // Copy to host the result
   cudaMemcpy(&phi_data[0],
              d_phi,
@@ -342,7 +342,7 @@ void runNegativeRange()
         data[idx] = idx * 1.0;
       });
 
-  cudaDeviceSynchronize();
+  RAJA::wait<cuda_wait>();
 
   size_t nfailed = 0;
 

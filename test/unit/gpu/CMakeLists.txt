@@ -47,7 +47,6 @@ SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS)
 
 cuda_add_executable(reducemin.exe
   ReduceMin.cxx)
-
 add_test(
     NAME reducemin
     COMMAND ${TEST_DRIVER} $<TARGET_FILE:reducemin.exe>)

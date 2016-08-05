@@ -92,6 +92,19 @@ struct cilk_for_segit : public cilk_for_exec {
 struct cilk_reduce {
 };
 
+///
+///////////////////////////////////////////////////////////////////////
+///
+/// Synchronization policies
+///
+///////////////////////////////////////////////////////////////////////
+///
+struct cilk_wait {
+	void operator()() {
+		// TODO if necessary
+	}
+};
+
 }  // closing brace for RAJA namespace
 
 #include "RAJA/exec-cilk/forall_cilk.hxx"

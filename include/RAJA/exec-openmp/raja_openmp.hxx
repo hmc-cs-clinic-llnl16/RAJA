@@ -118,6 +118,20 @@ struct omp_taskgraph_interval_segit {
 struct omp_reduce {
 };
 
+///
+///////////////////////////////////////////////////////////////////////
+///
+/// Synchronization policies
+///
+///////////////////////////////////////////////////////////////////////
+///
+struct omp_wait {
+	void operator()() {
+#pragma omp barrier
+		// this is almost certainly superfluous synchronization
+	}
+};
+
 }  // closing brace for RAJA namespace
 
 #include "RAJA/exec-openmp/forall_openmp.hxx"

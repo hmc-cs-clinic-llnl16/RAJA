@@ -194,6 +194,8 @@ int main(int argc, char *argv[])
   /// Run range traversal test in its simplest form for sanity check
   ///
 
+  RAJA::wait<cuda_wait>();
+
   // Reset reference and results arrays
   cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
   cudaMemset(ref_array, 0, sizeof(Real_type) * array_length);
@@ -213,6 +215,9 @@ int main(int argc, char *argv[])
                                  });
 
   s_ntests_run++;
+
+  RAJA::wait<cuda_wait>();
+
   if (!array_equal(ref_array, test_array, array_length)) {
     cout << "\n TEST FAILURE " << endl;
 #if 0
@@ -232,6 +237,8 @@ int main(int argc, char *argv[])
   /// Run traversal test with IndexSet containing multiple segments.
   ///
 
+  RAJA::wait<cuda_wait>();
+
   // Reset reference and results arrays
   cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
   cudaMemset(ref_array, 0, sizeof(Real_type) * array_length);
@@ -250,6 +257,9 @@ int main(int argc, char *argv[])
       });
 
   s_ntests_run++;
+
+  RAJA::wait<cuda_wait>();
+
   if (!array_equal(ref_array, test_array, array_length)) {
     cout << "\n TEST FAILURE " << endl;
 #if 0
@@ -279,6 +289,8 @@ int main(int argc, char *argv[])
   /// Run range Icount test in its simplest form for sanity check
   ///
 
+  RAJA::wait<cuda_wait>();
+
   // Reset reference and results arrays
   cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
   cudaMemset(ref_array, 0, sizeof(Real_type) * array_length);
@@ -297,6 +309,9 @@ int main(int argc, char *argv[])
       });
 
   s_ntests_run++;
+
+  RAJA::wait<cuda_wait>();
+
   if (!array_equal(ref_array, test_array, array_length)) {
     cout << "\n TEST FAILURE " << endl;
     cout << endl << endl;
@@ -313,6 +328,8 @@ int main(int argc, char *argv[])
   ///
   /// Run Icount test with IndexSet containing multiple segments.
   ///
+
+  RAJA::wait<cuda_wait>();
 
   // Reset reference and results arrays
   cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
@@ -333,6 +350,9 @@ int main(int argc, char *argv[])
       });
 
   s_ntests_run++;
+
+  RAJA::wait<cuda_wait>();
+
   if (!array_equal(ref_array, test_array, test_alen)) {
     cout << "\n TEST FAILURE " << endl;
     cout << endl << endl;
@@ -353,6 +373,8 @@ int main(int argc, char *argv[])
   ///
   cout << "\n Tests Passed / Tests Run = " << s_ntests_passed << " / "
        << s_ntests_run << endl;
+
+  RAJA::wait<cuda_wait>();
 
   cudaFree(parent);
   cudaFree(ref_array);

@@ -90,6 +90,19 @@ struct seq_segit : public seq_exec {
 struct seq_reduce {
 };
 
+///
+///////////////////////////////////////////////////////////////////////
+///
+/// Synchronization policies
+///
+///////////////////////////////////////////////////////////////////////
+///
+struct seq_wait {
+	void operator()() {
+		// do nothing
+	}
+};
+
 }  // closing brace for RAJA namespace
 
 #include "RAJA/exec-sequential/forall_sequential.hxx"

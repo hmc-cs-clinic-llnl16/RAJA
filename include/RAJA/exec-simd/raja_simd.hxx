@@ -89,6 +89,10 @@ struct simd_exec {
 // NOTE: RAJA reductions in SIMD loops use seg_reduce policy
 //
 
+//
+// NOTE: RAJA wait for SIMD should use seq_wait policy
+//
+
 #include "RAJA/exec-simd/forall_simd.hxx"
 
 #endif  // closing endif for header file include guard
