@@ -72,12 +72,12 @@ namespace RAJA
  */
 template <typename BODY>
 struct ForallN_BindFirstArg_Device {
-  BODY const body;
+  BODY const& body;
   size_t i;
 
   RAJA_INLINE
   RAJA_DEVICE
-  constexpr ForallN_BindFirstArg_Device(BODY b, size_t i0) : body(b), i(i0) {}
+  constexpr ForallN_BindFirstArg_Device(BODY& b, size_t i0) : body(b), i(i0) {}
 
   template <typename... ARGS>
   RAJA_INLINE RAJA_DEVICE void operator()(ARGS... args) const
@@ -255,7 +255,7 @@ using cuda_block_z_exec = CudaPolicy<CudaBlock<Dim3z>>;
 
 // Function to check indices for out-of-bounds
 template <typename BODY, typename... ARGS>
-RAJA_INLINE __device__ void cudaCheckBounds(BODY body, int i, ARGS... args)
+RAJA_INLINE __device__ void cudaCheckBounds(BODY& body, int i, ARGS... args)
 {
   if (i > INT_MIN) {
     ForallN_BindFirstArg_Device<BODY> bound(body, i);
@@ -264,7 +264,7 @@ RAJA_INLINE __device__ void cudaCheckBounds(BODY body, int i, ARGS... args)
 }
 
 template <typename BODY>
-RAJA_INLINE __device__ void cudaCheckBounds(BODY body, int i)
+RAJA_INLINE __device__ void cudaCheckBounds(BODY& body, int i)
 {
   if (i > INT_MIN) {
     body(i);

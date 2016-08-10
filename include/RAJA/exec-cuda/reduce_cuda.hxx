@@ -506,7 +506,7 @@ public:
   //
   // Note: only operates on device.
   //
-  __device__ ReduceMin<cuda_reduce<BLOCK_SIZE>, T> min(T val) const
+  __device__ ReduceMin<cuda_reduce<BLOCK_SIZE>, T> const& min(T val) const
   {
     __shared__ T sd[BLOCK_SIZE];
 
@@ -650,7 +650,7 @@ public:
   //
   // Note: only operates on device.
   //
-  __device__ ReduceMax<cuda_reduce<BLOCK_SIZE>, T> max(T val) const
+  __device__ ReduceMax<cuda_reduce<BLOCK_SIZE>, T> const& max(T val) const
   {
     __shared__ T sd[BLOCK_SIZE];
 
@@ -799,7 +799,7 @@ public:
   //
   // Note: only operates on device.
   //
-  __device__ ReduceSum<cuda_reduce<BLOCK_SIZE>, T> operator+=(T val) const
+  __device__ ReduceSum<cuda_reduce<BLOCK_SIZE>, T> const& operator+=(T val) const
   {
     __shared__ T sd[BLOCK_SIZE];
 
@@ -997,7 +997,7 @@ public:
   //
   // Note: only operates on device.
   //
-  __device__ ReduceSum<cuda_reduce_atomic<BLOCK_SIZE>, T> operator+=(
+  __device__ ReduceSum<cuda_reduce_atomic<BLOCK_SIZE>, T> const& operator+=(
       T val) const
   {
     __shared__ T sd[BLOCK_SIZE];
@@ -1176,7 +1176,7 @@ public:
   //
   // Note: only operates on device.
   //
-  __device__ ReduceMinLoc<cuda_reduce<BLOCK_SIZE>, T> minloc(
+  __device__ ReduceMinLoc<cuda_reduce<BLOCK_SIZE>, T> const& minloc(
       T val,
       Index_type idx) const
   {
@@ -1398,7 +1398,7 @@ public:
   //
   // Note: only operates on device.
   //
-  __device__ ReduceMaxLoc<cuda_reduce<BLOCK_SIZE>, T> maxloc(
+  __device__ ReduceMaxLoc<cuda_reduce<BLOCK_SIZE>, T> const& maxloc(
       T val,
       Index_type idx) const
   {
@@ -1613,7 +1613,7 @@ public:
   //
   // Note: only operates on device.
   //
-  __device__ ReduceMin<cuda_reduce_async<BLOCK_SIZE>, T> min(T val) const
+  __device__ ReduceMin<cuda_reduce_async<BLOCK_SIZE>, T> const& min(T val) const
   {
     __shared__ T sd[BLOCK_SIZE];
 
@@ -1757,7 +1757,7 @@ public:
   //
   // Note: only operates on device.
   //
-  __device__ ReduceMax<cuda_reduce_async<BLOCK_SIZE>, T> max(T val) const
+  __device__ ReduceMax<cuda_reduce_async<BLOCK_SIZE>, T> const& max(T val) const
   {
     __shared__ T sd[BLOCK_SIZE];
 
@@ -1906,7 +1906,7 @@ public:
   //
   // Note: only operates on device.
   //
-  __device__ ReduceSum<cuda_reduce_async<BLOCK_SIZE>, T> operator+=(T val) const
+  __device__ ReduceSum<cuda_reduce_async<BLOCK_SIZE>, T> const& operator+=(T val) const
   {
     __shared__ T sd[BLOCK_SIZE];
 
@@ -2104,7 +2104,7 @@ public:
   //
   // Note: only operates on device.
   //
-  __device__ ReduceSum<cuda_reduce_async_atomic<BLOCK_SIZE>, T> operator+=(
+  __device__ ReduceSum<cuda_reduce_async_atomic<BLOCK_SIZE>, T> const& operator+=(
       T val) const
   {
     __shared__ T sd[BLOCK_SIZE];
@@ -2283,7 +2283,7 @@ public:
   //
   // Note: only operates on device.
   //
-  __device__ ReduceMinLoc<cuda_reduce_async<BLOCK_SIZE>, T> minloc(
+  __device__ ReduceMinLoc<cuda_reduce_async<BLOCK_SIZE>, T> const& minloc(
       T val,
       Index_type idx) const
   {
@@ -2505,7 +2505,7 @@ public:
   //
   // Note: only operates on device.
   //
-  __device__ ReduceMaxLoc<cuda_reduce_async<BLOCK_SIZE>, T> maxloc(
+  __device__ ReduceMaxLoc<cuda_reduce_async<BLOCK_SIZE>, T> const& maxloc(
       T val,
       Index_type idx) const
   {
