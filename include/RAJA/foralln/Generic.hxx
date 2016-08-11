@@ -364,7 +364,7 @@ RAJA_INLINE void forallN(Ts &&... args)
 #ifdef RAJA_ENABLE_CUDA
   // this call should be moved into a cuda file
   // but must be made before loop_body is copied
-  onKernelLaunchCudaReduceTallyBlock();
+  beforeCudaKernelLaunch();
 #else
 #endif
 
@@ -372,6 +372,11 @@ RAJA_INLINE void forallN(Ts &&... args)
       VarOps::index_sequence<sizeof...(args)-1>{},
       VarOps::make_index_sequence<sizeof...(args)-1>{},
       VarOps::forward<Ts>(args)...);
+
+#ifdef RAJA_ENABLE_CUDA
+  afterCudaKernelLaunch();
+#else
+#endif
 }
 
 }  // namespace RAJA

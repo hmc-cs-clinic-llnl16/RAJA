@@ -135,7 +135,7 @@ RAJA_INLINE void forall(cuda_exec<BLOCK_SIZE, Async>,
                         Iterable&& iter,
                         LOOP_BODY&& loop_body)
 {
-  onKernelLaunchCudaReduceTallyBlock();
+  beforeCudaKernelLaunch();
 
   auto body = loop_body;
 
@@ -147,15 +147,18 @@ RAJA_INLINE void forall(cuda_exec<BLOCK_SIZE, Async>,
 
   RAJA_FT_BEGIN;
 
-  forall_cuda_kernel<<<gridSize, BLOCK_SIZE>>>(std::move(body),
-                                               std::move(begin),
-                                               len);
+  forall_cuda_kernel<<<gridSize, BLOCK_SIZE,
+                       getCudaSharedmemAmount()>>>(std::move(body),
+                                                   std::move(begin),
+                                                   len);
   cudaErrchk(cudaPeekAtLastError());
   if (!Async) {
     cudaErrchk(cudaDeviceSynchronize());
   }
 
   RAJA_FT_END;
+
+  afterCudaKernelLaunch();
 }
 
 template <size_t BLOCK_SIZE, bool Async, typename Iterable, typename LOOP_BODY>
@@ -164,7 +167,7 @@ RAJA_INLINE void forall_Icount(cuda_exec<BLOCK_SIZE, Async>,
                                Index_type icount,
                                LOOP_BODY&& loop_body)
 {
-  onKernelLaunchCudaReduceTallyBlock();
+  beforeCudaKernelLaunch();
 
   auto body = loop_body;
 
@@ -176,16 +179,19 @@ RAJA_INLINE void forall_Icount(cuda_exec<BLOCK_SIZE, Async>,
 
   RAJA_FT_BEGIN;
 
-  forall_Icount_cuda_kernel<<<gridSize, BLOCK_SIZE>>>(std::move(body),
-                                                      std::move(begin),
-                                                      len,
-                                                      icount);
+  forall_Icount_cuda_kernel<<<gridSize, BLOCK_SIZE,
+                              getCudaSharedmemAmount()>>>(std::move(body),
+                                                          std::move(begin),
+                                                          len,
+                                                          icount);
   cudaErrchk(cudaPeekAtLastError());
   if (!Async) {
     cudaErrchk(cudaDeviceSynchronize());
   }
 
   RAJA_FT_END;
+
+  afterCudaKernelLaunch();
 }
 
 //

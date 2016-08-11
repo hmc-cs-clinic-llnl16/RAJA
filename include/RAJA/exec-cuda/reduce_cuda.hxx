@@ -464,6 +464,10 @@ public:
   {
     *this = other;
     m_is_copy = true;
+#if defined(__CUDA_ARCH__)
+#else
+    m_smem_offset = getCudaSharedmemOffset(m_myID, sizeof(T) * BLOCK_SIZE);
+#endif
   }
 
   //
@@ -490,7 +494,7 @@ public:
   //
   operator T()
   {
-    onReadLaunchCudaReduceTallyBlock();
+    beforeCudaReadTallyBlock();
     return m_tally_host->tally;
   }
 
@@ -508,7 +512,8 @@ public:
   //
   __device__ ReduceMin<cuda_reduce<BLOCK_SIZE>, T> const& min(T val) const
   {
-    __shared__ T sd[BLOCK_SIZE];
+    extern __shared__ unsigned char sd_block[];
+    T *sd = reinterpret_cast<T*>(&sd_block[m_smem_offset]);
 
     int threadId = threadIdx.x + blockDim.x * threadIdx.y
                    + (blockDim.x * blockDim.y) * threadIdx.z;
@@ -552,13 +557,15 @@ private:
   //
   ReduceMin<cuda_reduce<BLOCK_SIZE>, T>();
 
-  bool m_is_copy;
+  CudaReductionTallyTypeAtomic<T> *m_tally_host = nullptr;
 
-  int m_myID;
+  CudaReductionTallyTypeAtomic<T> *m_tally_device = nullptr;
 
-  CudaReductionTallyTypeAtomic<T> *m_tally_host;
+  int m_myID = -1;
 
-  CudaReductionTallyTypeAtomic<T> *m_tally_device;
+  int m_smem_offset = -1;
+
+  bool m_is_copy = false;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
@@ -608,6 +615,10 @@ public:
   {
     *this = other;
     m_is_copy = true;
+#if defined(__CUDA_ARCH__)
+#else
+    m_smem_offset = getCudaSharedmemOffset(m_myID, sizeof(T) * BLOCK_SIZE);
+#endif
   }
 
   //
@@ -634,7 +645,7 @@ public:
   //
   operator T()
   {
-    onReadLaunchCudaReduceTallyBlock();
+    beforeCudaReadTallyBlock();
     return m_tally_host->tally;
   }
 
@@ -652,7 +663,8 @@ public:
   //
   __device__ ReduceMax<cuda_reduce<BLOCK_SIZE>, T> const& max(T val) const
   {
-    __shared__ T sd[BLOCK_SIZE];
+    extern __shared__ unsigned char sd_block[];
+    T *sd = reinterpret_cast<T*>(&sd_block[m_smem_offset]);
 
     int threadId = threadIdx.x + blockDim.x * threadIdx.y
                    + (blockDim.x * blockDim.y) * threadIdx.z;
@@ -696,13 +708,15 @@ private:
   //
   ReduceMax<cuda_reduce<BLOCK_SIZE>, T>();
 
-  bool m_is_copy;
+  CudaReductionTallyTypeAtomic<T> *m_tally_host = nullptr;
 
-  int m_myID;
+  CudaReductionTallyTypeAtomic<T> *m_tally_device = nullptr;
 
-  CudaReductionTallyTypeAtomic<T> *m_tally_host;
+  int m_myID = -1;
 
-  CudaReductionTallyTypeAtomic<T> *m_tally_device;
+  int m_smem_offset = -1;
+
+  bool m_is_copy = false;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
@@ -755,6 +769,10 @@ public:
   {
     *this = other;
     m_is_copy = true;
+#if defined(__CUDA_ARCH__)
+#else
+    m_smem_offset = getCudaSharedmemOffset(m_myID, sizeof(T) * BLOCK_SIZE);
+#endif
   }
 
   //
@@ -781,7 +799,7 @@ public:
   //
   operator T()
   {
-    onReadLaunchCudaReduceTallyBlock();
+    beforeCudaReadTallyBlock();
     assert(m_tally_host->maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally;
   }
@@ -801,7 +819,8 @@ public:
   //
   __device__ ReduceSum<cuda_reduce<BLOCK_SIZE>, T> const& operator+=(T val) const
   {
-    __shared__ T sd[BLOCK_SIZE];
+    extern __shared__ unsigned char sd_block[];
+    T *sd = reinterpret_cast<T*>(&sd_block[m_smem_offset]);
 
     int blockId = blockIdx.x + blockIdx.y * gridDim.x
                   + gridDim.x * gridDim.y * blockIdx.z;
@@ -897,13 +916,17 @@ private:
   //
   ReduceSum<cuda_reduce<BLOCK_SIZE>, T>();
 
-  bool m_is_copy;
-  int m_myID;
+  CudaReductionTallyType<T> *m_tally_host = nullptr;
 
-  CudaReductionTallyType<T> *m_tally_host;
+  CudaReductionBlockType<T> *m_blockdata = nullptr;
 
-  CudaReductionBlockType<T> *m_blockdata;
-  CudaReductionTallyType<T> *m_tally_device;
+  CudaReductionTallyType<T> *m_tally_device = nullptr;
+
+  int m_myID = -1;
+
+  int m_smem_offset = -1;
+
+  bool m_is_copy = false;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
@@ -954,6 +977,10 @@ public:
   {
     *this = other;
     m_is_copy = true;
+#if defined(__CUDA_ARCH__)
+#else
+    m_smem_offset = getCudaSharedmemOffset(m_myID, sizeof(T) * BLOCK_SIZE);
+#endif
   }
 
   // Destruction on host releases the global shared memory block chunk for
@@ -980,7 +1007,7 @@ public:
   //
   operator T()
   {
-    onReadLaunchCudaReduceTallyBlock();
+    beforeCudaReadTallyBlock();
     return m_tally_host->tally;
   }
 
@@ -1000,7 +1027,8 @@ public:
   __device__ ReduceSum<cuda_reduce_atomic<BLOCK_SIZE>, T> const& operator+=(
       T val) const
   {
-    __shared__ T sd[BLOCK_SIZE];
+    extern __shared__ unsigned char sd_block[];
+    T *sd = reinterpret_cast<T*>(&sd_block[m_smem_offset]);
 
     int threadId = threadIdx.x + blockDim.x * threadIdx.y
                    + (blockDim.x * blockDim.y) * threadIdx.z;
@@ -1048,13 +1076,15 @@ private:
   //
   ReduceSum<cuda_reduce_atomic<BLOCK_SIZE>, T>();
 
-  bool m_is_copy;
+  CudaReductionTallyTypeAtomic<T> *m_tally_host = nullptr;
 
-  int m_myID;
+  CudaReductionTallyTypeAtomic<T> *m_tally_device = nullptr;
 
-  CudaReductionTallyTypeAtomic<T> *m_tally_host;
+  int m_myID = -1;
 
-  CudaReductionTallyTypeAtomic<T> *m_tally_device;
+  int m_smem_offset = -1;
+
+  bool m_is_copy = false;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
@@ -1120,6 +1150,10 @@ public:
   {
     *this = other;
     m_is_copy = true;
+#if defined(__CUDA_ARCH__)
+#else
+      m_smem_offset = getCudaSharedmemOffset(m_myID, (sizeof(T) + sizeof(Index_type)) * BLOCK_SIZE);
+#endif
   }
 
   //
@@ -1146,7 +1180,7 @@ public:
   //
   operator T()
   {
-    onReadLaunchCudaReduceTallyBlock();
+    beforeCudaReadTallyBlock();
     assert(m_tally_host->maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally.val;
   }
@@ -1165,7 +1199,7 @@ public:
   //
   Index_type getLoc()
   {
-    onReadLaunchCudaReduceTallyBlock();
+    beforeCudaReadTallyBlock();
     assert(m_tally_host->maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally.idx;
   }
@@ -1180,8 +1214,9 @@ public:
       T val,
       Index_type idx) const
   {
-    __shared__ T sd_val[BLOCK_SIZE];
-    __shared__ Index_type sd_idx[BLOCK_SIZE];
+    extern __shared__ unsigned char sd_block[];
+    T *sd_val = reinterpret_cast<T*>(&sd_block[m_smem_offset]);
+    Index_type *sd_idx = reinterpret_cast<Index_type*>(&sd_block[m_smem_offset + sizeof(T) * BLOCK_SIZE]);
 
     int blockId = blockIdx.x + blockIdx.y * gridDim.x
                   + gridDim.x * gridDim.y * blockIdx.z;
@@ -1281,14 +1316,17 @@ private:
   //
   ReduceMinLoc<cuda_reduce<BLOCK_SIZE>, T>();
 
-  bool m_is_copy;
+  CudaReductionLocTallyType<T> *m_tally_host = nullptr;
 
-  int m_myID;
+  CudaReductionLocBlockType<T> *m_blockdata = nullptr;
 
-  CudaReductionLocTallyType<T> *m_tally_host;
+  CudaReductionLocTallyType<T> *m_tally_device = nullptr;
 
-  CudaReductionLocBlockType<T> *m_blockdata;
-  CudaReductionLocTallyType<T> *m_tally_device;
+  int m_myID = -1;
+
+  int m_smem_offset = -1;
+
+  bool m_is_copy = false;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
@@ -1342,6 +1380,10 @@ public:
   {
     *this = other;
     m_is_copy = true;
+#if defined(__CUDA_ARCH__)
+#else
+    m_smem_offset = getCudaSharedmemOffset(m_myID, (sizeof(T) + sizeof(Index_type)) * BLOCK_SIZE);
+#endif
   }
 
   //
@@ -1368,7 +1410,7 @@ public:
   //
   operator T()
   {
-    onReadLaunchCudaReduceTallyBlock();
+    beforeCudaReadTallyBlock();
     assert(m_tally_host->maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally.val;
   }
@@ -1387,7 +1429,7 @@ public:
   //
   Index_type getLoc()
   {
-    onReadLaunchCudaReduceTallyBlock();
+    beforeCudaReadTallyBlock();
     assert(m_tally_host->maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally.idx;
   }
@@ -1402,8 +1444,9 @@ public:
       T val,
       Index_type idx) const
   {
-    __shared__ T sd_val[BLOCK_SIZE];
-    __shared__ Index_type sd_idx[BLOCK_SIZE];
+    extern __shared__ unsigned char sd_block[];
+    T *sd_val = reinterpret_cast<T*>(&sd_block[m_smem_offset]);
+    Index_type *sd_idx = reinterpret_cast<Index_type*>(&sd_block[m_smem_offset + sizeof(T) * BLOCK_SIZE]);
 
     int blockId = blockIdx.x + blockIdx.y * gridDim.x
                   + gridDim.x * gridDim.y * blockIdx.z;
@@ -1504,14 +1547,17 @@ private:
   //
   ReduceMaxLoc<cuda_reduce<BLOCK_SIZE>, T>();
 
-  bool m_is_copy;
+  CudaReductionLocTallyType<T> *m_tally_host = nullptr;
 
-  int m_myID;
+  CudaReductionLocBlockType<T> *m_blockdata = nullptr;
 
-  CudaReductionLocTallyType<T> *m_tally_host;
+  CudaReductionLocTallyType<T> *m_tally_device = nullptr;
 
-  CudaReductionLocBlockType<T> *m_blockdata;
-  CudaReductionLocTallyType<T> *m_tally_device;
+  int m_myID = -1;
+
+  int m_smem_offset = -1;
+
+  bool m_is_copy = false;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
@@ -1571,6 +1617,10 @@ public:
   {
     *this = other;
     m_is_copy = true;
+#if defined(__CUDA_ARCH__)
+#else
+    m_smem_offset = getCudaSharedmemOffset(m_myID, sizeof(T) * BLOCK_SIZE);
+#endif
   }
 
   //
@@ -1597,7 +1647,7 @@ public:
   //
   operator T()
   {
-    onReadLaunchCudaReduceTallyBlockAsync();
+    beforeCudaReadTallyBlockAsync();
     return m_tally_host->tally;
   }
 
@@ -1615,7 +1665,8 @@ public:
   //
   __device__ ReduceMin<cuda_reduce_async<BLOCK_SIZE>, T> const& min(T val) const
   {
-    __shared__ T sd[BLOCK_SIZE];
+    extern __shared__ unsigned char sd_block[];
+    T *sd = reinterpret_cast<T*>(&sd_block[m_smem_offset]);
 
     int threadId = threadIdx.x + blockDim.x * threadIdx.y
                    + (blockDim.x * blockDim.y) * threadIdx.z;
@@ -1659,13 +1710,15 @@ private:
   //
   ReduceMin<cuda_reduce_async<BLOCK_SIZE>, T>();
 
-  bool m_is_copy;
+  CudaReductionTallyTypeAtomic<T> *m_tally_host = nullptr;
 
-  int m_myID;
+  CudaReductionTallyTypeAtomic<T> *m_tally_device = nullptr;
 
-  CudaReductionTallyTypeAtomic<T> *m_tally_host;
+  int m_myID = -1;
 
-  CudaReductionTallyTypeAtomic<T> *m_tally_device;
+  int m_smem_offset = -1;
+
+  bool m_is_copy = false;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
@@ -1715,6 +1768,10 @@ public:
   {
     *this = other;
     m_is_copy = true;
+#if defined(__CUDA_ARCH__)
+#else
+    m_smem_offset = getCudaSharedmemOffset(m_myID, sizeof(T) * BLOCK_SIZE);
+#endif
   }
 
   //
@@ -1741,7 +1798,7 @@ public:
   //
   operator T()
   {
-    onReadLaunchCudaReduceTallyBlockAsync();
+    beforeCudaReadTallyBlockAsync();
     return m_tally_host->tally;
   }
 
@@ -1759,7 +1816,8 @@ public:
   //
   __device__ ReduceMax<cuda_reduce_async<BLOCK_SIZE>, T> const& max(T val) const
   {
-    __shared__ T sd[BLOCK_SIZE];
+    extern __shared__ unsigned char sd_block[];
+    T *sd = reinterpret_cast<T*>(&sd_block[m_smem_offset]);
 
     int threadId = threadIdx.x + blockDim.x * threadIdx.y
                    + (blockDim.x * blockDim.y) * threadIdx.z;
@@ -1803,13 +1861,15 @@ private:
   //
   ReduceMax<cuda_reduce_async<BLOCK_SIZE>, T>();
 
-  bool m_is_copy;
+  CudaReductionTallyTypeAtomic<T> *m_tally_host = nullptr;
 
-  int m_myID;
+  CudaReductionTallyTypeAtomic<T> *m_tally_device = nullptr;
 
-  CudaReductionTallyTypeAtomic<T> *m_tally_host;
+  int m_myID = -1;
 
-  CudaReductionTallyTypeAtomic<T> *m_tally_device;
+  int m_smem_offset = -1;
+
+  bool m_is_copy = false;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
@@ -1862,6 +1922,10 @@ public:
   {
     *this = other;
     m_is_copy = true;
+#if defined(__CUDA_ARCH__)
+#else
+    m_smem_offset = getCudaSharedmemOffset(m_myID, sizeof(T) * BLOCK_SIZE);
+#endif
   }
 
   //
@@ -1888,7 +1952,7 @@ public:
   //
   operator T()
   {
-    onReadLaunchCudaReduceTallyBlockAsync();
+    beforeCudaReadTallyBlockAsync();
     assert(m_tally_host->maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally;
   }
@@ -1908,7 +1972,8 @@ public:
   //
   __device__ ReduceSum<cuda_reduce_async<BLOCK_SIZE>, T> const& operator+=(T val) const
   {
-    __shared__ T sd[BLOCK_SIZE];
+    extern __shared__ unsigned char sd_block[];
+    T *sd = reinterpret_cast<T*>(&sd_block[m_smem_offset]);
 
     int blockId = blockIdx.x + blockIdx.y * gridDim.x
                   + gridDim.x * gridDim.y * blockIdx.z;
@@ -2004,13 +2069,17 @@ private:
   //
   ReduceSum<cuda_reduce_async<BLOCK_SIZE>, T>();
 
-  bool m_is_copy;
-  int m_myID;
+  CudaReductionTallyType<T> *m_tally_host = nullptr;
 
-  CudaReductionTallyType<T> *m_tally_host;
+  CudaReductionBlockType<T> *m_blockdata = nullptr;
 
-  CudaReductionBlockType<T> *m_blockdata;
-  CudaReductionTallyType<T> *m_tally_device;
+  CudaReductionTallyType<T> *m_tally_device = nullptr;
+
+  int m_myID = -1;
+
+  int m_smem_offset = -1;
+
+  bool m_is_copy = false;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
@@ -2061,6 +2130,10 @@ public:
   {
     *this = other;
     m_is_copy = true;
+#if defined(__CUDA_ARCH__)
+#else
+    m_smem_offset = getCudaSharedmemOffset(m_myID, sizeof(T) * BLOCK_SIZE);
+#endif
   }
 
   //
@@ -2087,7 +2160,7 @@ public:
   //
   operator T()
   {
-    onReadLaunchCudaReduceTallyBlockAsync();
+    beforeCudaReadTallyBlockAsync();
     return m_tally_host->tally;
   }
 
@@ -2107,7 +2180,8 @@ public:
   __device__ ReduceSum<cuda_reduce_async_atomic<BLOCK_SIZE>, T> const& operator+=(
       T val) const
   {
-    __shared__ T sd[BLOCK_SIZE];
+    extern __shared__ unsigned char sd_block[];
+    T *sd = reinterpret_cast<T*>(&sd_block[m_smem_offset]);
 
     int threadId = threadIdx.x + blockDim.x * threadIdx.y
                    + (blockDim.x * blockDim.y) * threadIdx.z;
@@ -2155,13 +2229,15 @@ private:
   //
   ReduceSum<cuda_reduce_async_atomic<BLOCK_SIZE>, T>();
 
-  bool m_is_copy;
+  CudaReductionTallyTypeAtomic<T> *m_tally_host = nullptr;
 
-  int m_myID;
+  CudaReductionTallyTypeAtomic<T> *m_tally_device = nullptr;
 
-  CudaReductionTallyTypeAtomic<T> *m_tally_host;
+  int m_myID = -1;
 
-  CudaReductionTallyTypeAtomic<T> *m_tally_device;
+  int m_smem_offset = -1;
+
+  bool m_is_copy = false;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
@@ -2227,6 +2303,10 @@ public:
   {
     *this = other;
     m_is_copy = true;
+#if defined(__CUDA_ARCH__)
+#else
+    m_smem_offset = getCudaSharedmemOffset(m_myID, (sizeof(T) + sizeof(Index_type)) * BLOCK_SIZE);
+#endif
   }
 
   //
@@ -2253,7 +2333,7 @@ public:
   //
   operator T()
   {
-    onReadLaunchCudaReduceTallyBlockAsync();
+    beforeCudaReadTallyBlockAsync();
     assert(m_tally_host->maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally.val;
   }
@@ -2272,7 +2352,7 @@ public:
   //
   Index_type getLoc()
   {
-    onReadLaunchCudaReduceTallyBlockAsync();
+    beforeCudaReadTallyBlockAsync();
     assert(m_tally_host->maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally.idx;
   }
@@ -2287,8 +2367,9 @@ public:
       T val,
       Index_type idx) const
   {
-    __shared__ T sd_val[BLOCK_SIZE];
-    __shared__ Index_type sd_idx[BLOCK_SIZE];
+    extern __shared__ unsigned char sd_block[];
+    T *sd_val = reinterpret_cast<T*>(&sd_block[m_smem_offset]);
+    Index_type *sd_idx = reinterpret_cast<Index_type*>(&sd_block[m_smem_offset + sizeof(T) * BLOCK_SIZE]);
 
     int blockId = blockIdx.x + blockIdx.y * gridDim.x
                   + gridDim.x * gridDim.y * blockIdx.z;
@@ -2388,14 +2469,17 @@ private:
   //
   ReduceMinLoc<cuda_reduce_async<BLOCK_SIZE>, T>();
 
-  bool m_is_copy;
+  CudaReductionLocTallyType<T> *m_tally_host = nullptr;
 
-  int m_myID;
+  CudaReductionLocBlockType<T> *m_blockdata = nullptr;
 
-  CudaReductionLocTallyType<T> *m_tally_host;
+  CudaReductionLocTallyType<T> *m_tally_device = nullptr;
 
-  CudaReductionLocBlockType<T> *m_blockdata;
-  CudaReductionLocTallyType<T> *m_tally_device;
+  int m_myID = -1;
+
+  int m_smem_offset = -1;
+
+  bool m_is_copy = false;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));
@@ -2449,6 +2533,10 @@ public:
   {
     *this = other;
     m_is_copy = true;
+#if defined(__CUDA_ARCH__)
+#else
+    m_smem_offset = getCudaSharedmemOffset(m_myID, (sizeof(T) + sizeof(Index_type)) * BLOCK_SIZE);
+#endif
   }
 
   //
@@ -2475,7 +2563,7 @@ public:
   //
   operator T()
   {
-    onReadLaunchCudaReduceTallyBlockAsync();
+    beforeCudaReadTallyBlockAsync();
     assert(m_tally_host->maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally.val;
   }
@@ -2494,7 +2582,7 @@ public:
   //
   Index_type getLoc()
   {
-    onReadLaunchCudaReduceTallyBlockAsync();
+    beforeCudaReadTallyBlockAsync();
     assert(m_tally_host->maxGridSize < RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally.idx;
   }
@@ -2509,8 +2597,9 @@ public:
       T val,
       Index_type idx) const
   {
-    __shared__ T sd_val[BLOCK_SIZE];
-    __shared__ Index_type sd_idx[BLOCK_SIZE];
+    extern __shared__ unsigned char sd_block[];
+    T *sd_val = reinterpret_cast<T*>(&sd_block[m_smem_offset]);
+    Index_type *sd_idx = reinterpret_cast<Index_type*>(&sd_block[m_smem_offset + sizeof(T) * BLOCK_SIZE]);
 
     int blockId = blockIdx.x + blockIdx.y * gridDim.x
                   + gridDim.x * gridDim.y * blockIdx.z;
@@ -2611,14 +2700,17 @@ private:
   //
   ReduceMaxLoc<cuda_reduce_async<BLOCK_SIZE>, T>();
 
-  bool m_is_copy;
+  CudaReductionLocTallyType<T> *m_tally_host = nullptr;
 
-  int m_myID;
+  CudaReductionLocBlockType<T> *m_blockdata = nullptr;
 
-  CudaReductionLocTallyType<T> *m_tally_host;
+  CudaReductionLocTallyType<T> *m_tally_device = nullptr;
 
-  CudaReductionLocBlockType<T> *m_blockdata;
-  CudaReductionLocTallyType<T> *m_tally_device;
+  int m_myID = -1;
+
+  int m_smem_offset = -1;
+
+  bool m_is_copy = false;
 
   // Sanity checks for block size
   static constexpr bool powerOfTwoCheck = (!(BLOCK_SIZE & (BLOCK_SIZE - 1)));

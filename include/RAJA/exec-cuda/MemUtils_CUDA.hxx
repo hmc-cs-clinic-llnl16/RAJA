@@ -165,11 +165,33 @@ void getCudaReductionTallyBlock(int id, void** host_tally, void** device_tally);
 
 void releaseCudaReductionTallyBlock(int id);
 
-void onKernelLaunchCudaReduceTallyBlock();
+void beforeCudaKernelLaunch();
 
-void onReadLaunchCudaReduceTallyBlockAsync();
+void afterCudaKernelLaunch();
 
-void onReadLaunchCudaReduceTallyBlock();
+void beforeCudaReadTallyBlockAsync();
+
+void beforeCudaReadTallyBlock();
+
+/*!
+ ******************************************************************************
+ *
+ * \brief  Earmark amount of device shared memory and get byte offset into 
+ *         device shared memory if in a RAJA forall.
+ *
+ ******************************************************************************
+ */
+int getCudaSharedmemOffset(int id, int amount);
+
+/*!
+ ******************************************************************************
+ *
+ * \brief  Get the amount in bytes of shared memory required for thie current
+ *         kernel launch.
+ *
+ ******************************************************************************
+ */
+int getCudaSharedmemAmount();
 
 /*!
  ******************************************************************************
