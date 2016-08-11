@@ -94,7 +94,7 @@ __global__ void forall_cuda_kernel(LOOP_BODY loop_body,
   auto body = loop_body;
 
   Index_type ii = blockDim.x * blockIdx.x + threadIdx.x;
-  if (ii < length) {
+  for (; ii < length; ii += gridDim.x * blockDim.x) {
     body(idx[ii]);
   }
 }
@@ -117,7 +117,7 @@ __global__ void forall_Icount_cuda_kernel(LOOP_BODY loop_body,
   auto body = loop_body;
 
   Index_type ii = blockDim.x * blockIdx.x + threadIdx.x;
-  if (ii < length) {
+  for (; ii < length; ii += gridDim.x * blockDim.x) {
     body(ii + icount, idx[ii]);
   }
 }
@@ -143,7 +143,7 @@ RAJA_INLINE void forall(cuda_exec<BLOCK_SIZE, Async>,
   auto end = std::end(iter);
   Index_type len = std::distance(begin, end);
 
-  size_t gridSize = (len + BLOCK_SIZE - 1) / BLOCK_SIZE;
+  size_t gridSize = RAJA_MIN((len + BLOCK_SIZE - 1) / BLOCK_SIZE, RAJA_CUDA_MAX_NUM_BLOCKS);
 
   RAJA_FT_BEGIN;
 
@@ -175,7 +175,7 @@ RAJA_INLINE void forall_Icount(cuda_exec<BLOCK_SIZE, Async>,
   auto end = std::end(iter);
   Index_type len = std::distance(begin, end);
 
-  size_t gridSize = (len + BLOCK_SIZE - 1) / BLOCK_SIZE;
+  size_t gridSize = RAJA_MIN((len + BLOCK_SIZE - 1) / BLOCK_SIZE, RAJA_CUDA_MAX_NUM_BLOCKS);
 
   RAJA_FT_BEGIN;
 

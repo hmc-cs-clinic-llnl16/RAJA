@@ -62,10 +62,13 @@
 
 namespace RAJA
 {
+/// Maximum number of blocks that RAJA will launch
+/// threads are reused to finish all work
+#define RAJA_CUDA_MAX_NUM_BLOCKS (1024 * 16)
 
 /// Size of reduction memory block for each reducer object (value based on
 /// rough estimate of "worst case" -- need to think more about this...
-#define RAJA_CUDA_REDUCE_BLOCK_LENGTH (1024 + 8) * 16
+#define RAJA_CUDA_REDUCE_BLOCK_LENGTH RAJA_CUDA_MAX_NUM_BLOCKS
 
 /// Reduction Tallies are computed into a small block to minimize UM migration
 #define RAJA_CUDA_REDUCE_TALLY_LENGTH RAJA_MAX_REDUCE_VARS
