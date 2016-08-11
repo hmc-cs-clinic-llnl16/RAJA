@@ -64,6 +64,8 @@
 namespace RAJA
 {
 
+using cuda_dimension_type = uint3;
+
 ///
 /////////////////////////////////////////////////////////////////////
 ///
@@ -73,36 +75,41 @@ namespace RAJA
 /////////////////////////////////////////////////////////////////////
 ///
 struct Dim3x {
-  __host__ __device__ inline unsigned int &operator()(dim3 &dim)
+  __host__ __device__ inline unsigned int &operator()(cuda_dimension_type &dim)
   {
     return dim.x;
   }
 
-  __host__ __device__ inline unsigned int operator()(dim3 const &dim)
+//  __host__ __device__ inline unsigned int &operator()(decltype(blockIdx) &dim)
+//  {
+//    return dim.x;
+//  }
+
+  __host__ __device__ inline unsigned int operator()(cuda_dimension_type const &dim)
   {
     return dim.x;
   }
 };
 ///
 struct Dim3y {
-  __host__ __device__ inline unsigned int &operator()(dim3 &dim)
+  __host__ __device__ inline unsigned int &operator()(cuda_dimension_type &dim)
   {
     return dim.y;
   }
 
-  __host__ __device__ inline unsigned int operator()(dim3 const &dim)
+  __host__ __device__ inline unsigned int operator()(cuda_dimension_type const &dim)
   {
     return dim.y;
   }
 };
 ///
 struct Dim3z {
-  __host__ __device__ inline unsigned int &operator()(dim3 &dim)
+  __host__ __device__ inline unsigned int &operator()(cuda_dimension_type &dim)
   {
     return dim.z;
   }
 
-  __host__ __device__ inline unsigned int operator()(dim3 const &dim)
+  __host__ __device__ inline unsigned int operator()(cuda_dimension_type const &dim)
   {
     return dim.z;
   }

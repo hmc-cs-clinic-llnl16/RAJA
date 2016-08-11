@@ -93,8 +93,8 @@ struct ForallN_BindFirstArg_Device {
  * This is passed to the execution policies to setup the kernel launch.
  */
 struct CudaDim {
-  dim3 num_threads;
-  dim3 num_blocks;
+  cuda_dimension_type num_threads;
+  cuda_dimension_type num_blocks;
 
   __host__ __device__ void print(void) const
   {
@@ -149,11 +149,11 @@ struct CudaThreadBlock {
   {
     int n = end - begin;
     if (n < threads_per_block) {
+      //decltype(view(dims.num_threads)) dog = 1;
       view(dims.num_threads) = n;
       view(dims.num_blocks) = 1;
     } else {
       view(dims.num_threads) = threads_per_block;
-
       int blocks = n / threads_per_block;
       if (n % threads_per_block) {
         ++blocks;

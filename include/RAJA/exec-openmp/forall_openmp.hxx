@@ -17,6 +17,7 @@
 #include "RAJA/config.hxx"
 
 #if defined(RAJA_ENABLE_OPENMP)
+#include "omp.h"
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2016, Lawrence Livermore National Security, LLC.
