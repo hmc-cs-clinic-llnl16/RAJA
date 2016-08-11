@@ -274,8 +274,11 @@ RAJA_INLINE __device__ void cudaCheckBounds(BODY& body, int i)
 // Launcher that uses execution policies to map blockIdx and threadIdx to map
 // to N-argument function
 template <typename BODY, typename... CARGS>
-__global__ void cudaLauncherN(BODY body, CARGS... cargs)
+__global__ void cudaLauncherN(BODY loop_body, CARGS... cargs)
 {
+  // force reduction object copy constructors and destructors to run
+  auto body = loop_body;
+
   // Compute indices and then pass through the bounds-checking mechanism
   cudaCheckBounds(body, (cargs())...);
 }
@@ -325,8 +328,6 @@ struct ForallN_Executor<ForallN_PolicyPair<CudaPolicy<CuARG0>, ISET0>,
   template <typename BODY>
   RAJA_INLINE void operator()(BODY body) const
   {
-    onKernelLaunchCudaReduceTallyBlock();
-
     unpackIndexSets(body, typename gen_sequence<sizeof...(CuARGS)>::type());
   }
 
@@ -365,8 +366,6 @@ struct ForallN_Executor<ForallN_PolicyPair<CudaPolicy<CuARG0>, ISET0>> {
   template <typename BODY>
   RAJA_INLINE void operator()(BODY body) const
   {
-    onKernelLaunchCudaReduceTallyBlock();
-    
     CudaDim dims;
     CuARG0 c0(dims, iset0);
 

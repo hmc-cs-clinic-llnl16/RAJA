@@ -91,9 +91,11 @@ __global__ void forall_cuda_kernel(LOOP_BODY loop_body,
                                    const Iterator idx,
                                    Index_type length)
 {
+  auto body = loop_body;
+
   Index_type ii = blockDim.x * blockIdx.x + threadIdx.x;
   if (ii < length) {
-    loop_body(idx[ii]);
+    body(idx[ii]);
   }
 }
 
@@ -112,9 +114,11 @@ __global__ void forall_Icount_cuda_kernel(LOOP_BODY loop_body,
                                           Index_type length,
                                           Index_type icount)
 {
+  auto body = loop_body;
+
   Index_type ii = blockDim.x * blockIdx.x + threadIdx.x;
   if (ii < length) {
-    loop_body(ii + icount, idx[ii]);
+    body(ii + icount, idx[ii]);
   }
 }
 
@@ -129,9 +133,11 @@ __global__ void forall_Icount_cuda_kernel(LOOP_BODY loop_body,
 template <size_t BLOCK_SIZE, bool Async, typename Iterable, typename LOOP_BODY>
 RAJA_INLINE void forall(cuda_exec<BLOCK_SIZE, Async>,
                         Iterable&& iter,
-                        LOOP_BODY loop_body)
+                        LOOP_BODY&& loop_body)
 {
   onKernelLaunchCudaReduceTallyBlock();
+
+  auto body = loop_body;
 
   auto begin = std::begin(iter);
   auto end = std::end(iter);
@@ -141,7 +147,7 @@ RAJA_INLINE void forall(cuda_exec<BLOCK_SIZE, Async>,
 
   RAJA_FT_BEGIN;
 
-  forall_cuda_kernel<<<gridSize, BLOCK_SIZE>>>(std::move(loop_body),
+  forall_cuda_kernel<<<gridSize, BLOCK_SIZE>>>(std::move(body),
                                                std::move(begin),
                                                len);
   cudaErrchk(cudaPeekAtLastError());
@@ -156,9 +162,11 @@ template <size_t BLOCK_SIZE, bool Async, typename Iterable, typename LOOP_BODY>
 RAJA_INLINE void forall_Icount(cuda_exec<BLOCK_SIZE, Async>,
                                Iterable&& iter,
                                Index_type icount,
-                               LOOP_BODY loop_body)
+                               LOOP_BODY&& loop_body)
 {
   onKernelLaunchCudaReduceTallyBlock();
+
+  auto body = loop_body;
 
   auto begin = std::begin(iter);
   auto end = std::end(iter);
@@ -168,7 +176,7 @@ RAJA_INLINE void forall_Icount(cuda_exec<BLOCK_SIZE, Async>,
 
   RAJA_FT_BEGIN;
 
-  forall_Icount_cuda_kernel<<<gridSize, BLOCK_SIZE>>>(std::move(loop_body),
+  forall_Icount_cuda_kernel<<<gridSize, BLOCK_SIZE>>>(std::move(body),
                                                       std::move(begin),
                                                       len,
                                                       icount);
@@ -201,7 +209,7 @@ RAJA_INLINE void forall_Icount(cuda_exec<BLOCK_SIZE, Async>,
 template <size_t BLOCK_SIZE, typename LOOP_BODY>
 RAJA_INLINE void forall(IndexSet::ExecPolicy<seq_segit, cuda_exec<BLOCK_SIZE>>,
                         const IndexSet& iset,
-                        LOOP_BODY loop_body)
+                        LOOP_BODY&& loop_body)
 {
   int num_seg = iset.getNumSegments();
   for (int isi = 0; isi < num_seg; ++isi) {
@@ -230,7 +238,7 @@ template <size_t BLOCK_SIZE, typename LOOP_BODY>
 RAJA_INLINE void forall_Icount(
     IndexSet::ExecPolicy<seq_segit, cuda_exec<BLOCK_SIZE>>,
     const IndexSet& iset,
-    LOOP_BODY loop_body)
+    LOOP_BODY&& loop_body)
 {
   int num_seg = iset.getNumSegments();
   for (int isi = 0; isi < num_seg; ++isi) {
