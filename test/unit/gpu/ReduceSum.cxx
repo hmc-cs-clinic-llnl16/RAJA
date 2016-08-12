@@ -20,7 +20,7 @@
 
 #include "Compare.hxx"
 
-#define TEST_VEC_LEN 1024 * 1024
+#define TEST_VEC_LEN 1024 * 1024 * 15
 
 using namespace RAJA;
 using namespace std;
