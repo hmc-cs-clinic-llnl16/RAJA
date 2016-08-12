@@ -535,12 +535,10 @@ if(NOT "${CUDA_TOOLKIT_ROOT_DIR}" STREQUAL "${CUDA_TOOLKIT_ROOT_DIR_INTERNAL}")
   unset(CUDA_TOOLKIT_TARGET_DIR CACHE)
   unset(CUDA_NVCC_EXECUTABLE CACHE)
   unset(CUDA_VERSION CACHE)
-  MESSAGE("OOPS")
   cuda_unset_include_and_libraries()
 endif()
 
 if(NOT "${CUDA_TOOLKIT_TARGET_DIR}" STREQUAL "${CUDA_TOOLKIT_TARGET_DIR_INTERNAL}")
-  MESSAGE("OOPS")
   cuda_unset_include_and_libraries()
 endif()
 
@@ -836,15 +834,17 @@ set(CUDA_SDK_SEARCH_PATH
 #############################
 # Check for required components
 set(CUDA_FOUND TRUE)
-
-if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
-  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__CUDACC__ -D__CUDA_CONSTEXPR__=constexpr -stdlib=libc++ -x cuda -arch=sm_30")
-  add_definitions("-D__CUDACC__ -D__CUDA_CONSTEXPR__=constexpr -x cuda --cuda-gpu-arch=sm_30 --cuda-path=/opt/cudatoolkit-7.5")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -I/usr/include/c++/4.6.1/ -I/usr/include/c++/4.6.1/x86_64-redhat-linux6E -L/opt/cudatoolkit-7.5/lib64 -lcudart")
-  include_directories("/usr/include/c++/4.6.1")
-  include_directories("/usr/include/c++/4.6.1/x86_64-redhat-linux6E/")
+if(NOT DEFINED CUDA_TOOLKIT_ROOT_DIR)
+    SET(CUDA_TOOLKIT_ROOT_DIR "/opt/cudatoolkit-7.5")
 endif()
-MESSAGE("FLAGS ARE NOW ${CMAKE_CXX_FLAGS}")
+SET(EXPT_CUDA_LIBRARY_LOCATION "${CUDA_TOOLKIT_ROOT_DIR}/lib64")
+SET(EXPT_CUDA_INCLUDE_LOCATION "${CUDA_TOOLKIT_ROOT_DIR}/include")
+if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
+        #add_definitions("-D__CUDACC__ -D__CUDA_CONSTEXPR__=constexpr -x cuda --cuda-gpu-arch=sm_35 --cuda-path=${CUDA_TOOLKIT_ROOT_DIR}")
+        add_definitions("-x cuda -D__CUDACC__ --cuda-gpu-arch=sm_35 --cuda-path=${CUDA_TOOLKIT_ROOT_DIR}")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L${EXPT_CUDA_LIBRARY_LOCATION} -lcudart")
+endif()
+
 set(CUDA_TOOLKIT_ROOT_DIR_INTERNAL "${CUDA_TOOLKIT_ROOT_DIR}" CACHE INTERNAL
   "This is the value of the last time CUDA_TOOLKIT_ROOT_DIR was set successfully." FORCE)
 set(CUDA_TOOLKIT_TARGET_DIR_INTERNAL "${CUDA_TOOLKIT_TARGET_DIR}" CACHE INTERNAL
@@ -1493,7 +1493,7 @@ macro(CUDA_ADD_LIBRARY cuda_target)
   CUDA_ADD_CUDA_INCLUDE_ONCE()
   if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
     add_library(${cuda_target} ${ARGN})
-    include_directories(/opt/cudatoolkit-7.5/include)
+    include_directories(${EXPT_CUDA_INCLUDE_LOCATION})
     target_link_libraries(${cuda_target} cudart)
   else()
 
