@@ -141,7 +141,7 @@ typedef aligned_real_type* __restrict__ TDRAReal_ptr;
 typedef const aligned_real_type* __restrict__ const_TDRAReal_ptr;
 
 #else
-#error RAJA compiler is undefined!
+#pragma message("RAJA compiler is undefined!")
 
 #endif
 
