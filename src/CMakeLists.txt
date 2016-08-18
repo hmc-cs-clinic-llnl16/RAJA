@@ -66,7 +66,10 @@ else()
     )
 endif()
 
-if (NOT CMAKE_CXX_COMPILER_ID MATCHES Intel)
+message(STATUS ${CMAKE_CXX_COMPILER_ID})
+if (CMAKE_CXX_COMPILER_ID MATCHES Intel
+    OR CMAKE_CXX_COMPILER_ID MATCHES PathScale)
+else()
   set_target_properties(RAJA
     PROPERTIES
     CXX_STANDARD 11

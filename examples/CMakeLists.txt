@@ -45,9 +45,22 @@
 if (RAJA_ENABLE_CUDA)
     cuda_add_executable(raja-pi
       pi.cxx)
+
+    if (RAJA_ENABLE_NESTED)
+      cuda_add_executable(raja-foralln
+        foralln.cxx)
+    endif ()
 else ()
     add_executable(raja-pi
       pi.cxx)
+
+    #if (RAJA_ENABLE_NESTED)
+      add_executable(raja-foralln
+        foralln.cxx)
+      #endif ()
 endif ()
 
 target_link_libraries(raja-pi RAJA)
+#if (RAJA_ENABLE_NESTED)
+  target_link_libraries(raja-foralln RAJA)
+  #endif ()
