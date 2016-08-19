@@ -71,7 +71,7 @@
 #include "RAJA/exec-cuda/raja_cudaerrchk.hxx"
 
 #include "cuda_runtime.h"
-#include "sm_35_intrinsics.hpp"
+#include "sm_30_intrinsics.hpp"
 namespace RAJA {
 
 /*!
