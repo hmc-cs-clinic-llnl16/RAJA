@@ -172,9 +172,9 @@ void beforeCudaKernelLaunch();
 
 void afterCudaKernelLaunch();
 
-void beforeCudaReadTallyBlockAsync();
+void beforeCudaReadTallyBlockAsync(int id);
 
-void beforeCudaReadTallyBlock();
+void beforeCudaReadTallyBlock(int id);
 
 /*!
  ******************************************************************************

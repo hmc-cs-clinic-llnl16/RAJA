@@ -547,7 +547,7 @@ public:
   //
   operator T()
   {
-    beforeCudaReadTallyBlock();
+    beforeCudaReadTallyBlock(m_myID);
     return m_tally_host->tally;
   }
 
@@ -723,7 +723,7 @@ public:
   //
   operator T()
   {
-    beforeCudaReadTallyBlock();
+    beforeCudaReadTallyBlock(m_myID);
     return m_tally_host->tally;
   }
 
@@ -955,7 +955,7 @@ public:
   //
   operator T()
   {
-    beforeCudaReadTallyBlock();
+    beforeCudaReadTallyBlock(m_myID);
     assert(m_tally_host->maxGridSize <= RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally;
   }
@@ -1140,7 +1140,7 @@ public:
   //
   operator T()
   {
-    beforeCudaReadTallyBlock();
+    beforeCudaReadTallyBlock(m_myID);
     return m_tally_host->tally;
   }
 
@@ -1397,7 +1397,7 @@ public:
   //
   operator T()
   {
-    beforeCudaReadTallyBlock();
+    beforeCudaReadTallyBlock(m_myID);
     assert(m_tally_host->maxGridSize <= RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally.val;
   }
@@ -1416,7 +1416,7 @@ public:
   //
   Index_type getLoc()
   {
-    beforeCudaReadTallyBlock();
+    beforeCudaReadTallyBlock(m_myID);
     assert(m_tally_host->maxGridSize <= RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally.idx;
   }
@@ -1661,7 +1661,7 @@ public:
   //
   operator T()
   {
-    beforeCudaReadTallyBlock();
+    beforeCudaReadTallyBlock(m_myID);
     assert(m_tally_host->maxGridSize <= RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally.val;
   }
@@ -1680,7 +1680,7 @@ public:
   //
   Index_type getLoc()
   {
-    beforeCudaReadTallyBlock();
+    beforeCudaReadTallyBlock(m_myID);
     assert(m_tally_host->maxGridSize <= RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally.idx;
   }
@@ -1867,7 +1867,7 @@ public:
   //
   operator T()
   {
-    beforeCudaReadTallyBlockAsync();
+    beforeCudaReadTallyBlockAsync(m_myID);
     return m_tally_host->tally;
   }
 
@@ -2043,7 +2043,7 @@ public:
   //
   operator T()
   {
-    beforeCudaReadTallyBlockAsync();
+    beforeCudaReadTallyBlockAsync(m_myID);
     return m_tally_host->tally;
   }
 
@@ -2275,7 +2275,7 @@ public:
   //
   operator T()
   {
-    beforeCudaReadTallyBlockAsync();
+    beforeCudaReadTallyBlockAsync(m_myID);
     assert(m_tally_host->maxGridSize <= RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally;
   }
@@ -2459,7 +2459,7 @@ public:
   //
   operator T()
   {
-    beforeCudaReadTallyBlockAsync();
+    beforeCudaReadTallyBlockAsync(m_myID);
     return m_tally_host->tally;
   }
 
@@ -2716,7 +2716,7 @@ public:
   //
   operator T()
   {
-    beforeCudaReadTallyBlockAsync();
+    beforeCudaReadTallyBlockAsync(m_myID);
     assert(m_tally_host->maxGridSize <= RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally.val;
   }
@@ -2735,7 +2735,7 @@ public:
   //
   Index_type getLoc()
   {
-    beforeCudaReadTallyBlockAsync();
+    beforeCudaReadTallyBlockAsync(m_myID);
     assert(m_tally_host->maxGridSize <= RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally.idx;
   }
@@ -2980,7 +2980,7 @@ public:
   //
   operator T()
   {
-    beforeCudaReadTallyBlockAsync();
+    beforeCudaReadTallyBlockAsync(m_myID);
     assert(m_tally_host->maxGridSize <= RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally.val;
   }
@@ -2999,7 +2999,7 @@ public:
   //
   Index_type getLoc()
   {
-    beforeCudaReadTallyBlockAsync();
+    beforeCudaReadTallyBlockAsync(m_myID);
     assert(m_tally_host->maxGridSize <= RAJA_CUDA_REDUCE_BLOCK_LENGTH);
     return m_tally_host->tally.idx;
   }

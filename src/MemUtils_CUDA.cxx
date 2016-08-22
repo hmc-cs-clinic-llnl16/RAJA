@@ -329,19 +329,24 @@ void afterCudaKernelLaunch()
 * Must be called before reading a tally block on the CPU.
 * Writes any CPU changes to the tally block back before updating the 
 * CPU tally blocks with the values on the GPU.
+* Only needs to do work if the tally block was written back.
 *
 *************************************************************************
 */
-void beforeCudaReadTallyBlockAsync()
+void beforeCudaReadTallyBlockAsync(int id)
 {
-  writeBackCudaReductionTallyBlock();
-  readCudaReductionTallyBlockAsync();
+  if (!s_tally_block_dirty[id]) {
+    writeBackCudaReductionTallyBlock();
+    readCudaReductionTallyBlockAsync();
+  }
 }
 
-void beforeCudaReadTallyBlock()
+void beforeCudaReadTallyBlock(int id)
 {
-  writeBackCudaReductionTallyBlock();
-  readCudaReductionTallyBlock();
+  if (!s_tally_block_dirty[id]) {
+    writeBackCudaReductionTallyBlock();
+    readCudaReductionTallyBlock();
+  }
 }
 
 
