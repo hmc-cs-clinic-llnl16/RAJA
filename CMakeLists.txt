@@ -53,6 +53,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/thirdparty" ${CMAKE_MODULE_PA
 
 # Build options
 option(RAJA_ENABLE_OPENMP "Build OpenMP support" On)
+option(RAJA_ENABLE_AGENCY "Build Agency support" On)
 option(RAJA_ENABLE_CUDA "Build CUDA support" Off)
 option(RAJA_ENABLE_CLANG_CUDA "Use Clang's native CUDA support" Off)
 set(RAJA_CUDA_ARCH "sm_35" CACHE STRING "Compute architecture to pass to CUDA builds")
@@ -106,7 +107,7 @@ endif ()
 if(RAJA_ENABLE_APPLICATIONS)
   if (NOT EXISTS ${PROJECT_SOURCE_DIR}/extra/llnl-raja-proxies/CMakeLists.txt)
     message(STATUS "Cloning RAJA proxy applications...")
-    execute_process(COMMAND git clone https://github.com/LLNL/RAJA-examples.git ${PROJECT_SOURCE_DIR}/extra/llnl-raja-proxies)
+    execute_process(COMMAND git clone https://github.com/hmc-cs-clinic-llnl16/RAJA-examples.git ${PROJECT_SOURCE_DIR}/extra/llnl-raja-proxies)
   endif()
   add_subdirectory(extra/llnl-raja-proxies)
 endif()

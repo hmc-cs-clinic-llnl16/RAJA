@@ -41,6 +41,12 @@
 #
 ###############################################################################
 
+if(RAJA_ENABLE_AGENCY)
+  set(AGENCY_DIR "${PROJECT_SOURCE_DIR}/extra/agency")
+  message(STATUS "AGENCY test/unit/gpu/CMakeLists.txt ${AGENCY_DIR}")
+  include_directories(SYSTEM ${AGENCY_DIR})
+endif()  
+
 if (NOT RAJA_ENABLE_NESTED)
   add_definitions(-DRAJA_ENABLE_NESTED)
 endif()
