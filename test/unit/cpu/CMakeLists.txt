@@ -41,6 +41,11 @@
 #
 ###############################################################################
 
+if(RAJA_ENABLE_AGENCY)
+  set(AGENCY_DIR "${PROJECT_SOURCE_DIR}/extra/agency")
+  include_directories(SYSTEM ${AGENCY_DIR})
+endif()  
+
 if (NOT RAJA_ENABLE_NESTED)
   add_definitions(-DRAJA_ENABLE_NESTED)
 endif()
@@ -55,6 +60,13 @@ raja_add_test(
 raja_add_test(
   NAME CPUnested-test
   SOURCES main-nested.cxx)
+
+if(RAJA_ENABLE_AGENCY)
+  raja_add_test(
+    NAME agency-tests
+    SOURCES test-agency.cxx
+    DEPENDS_ON bis gtest gtest_main ${CMAKE_THREAD_LIBS_INIT})
+endif()
 
 if(RAJA_ENABLE_OPENMP)
   raja_add_test(
