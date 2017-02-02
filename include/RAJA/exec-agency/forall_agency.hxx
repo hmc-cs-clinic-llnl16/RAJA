@@ -93,7 +93,7 @@ RAJA_INLINE void forall(const agency_base<Agent, Worker>&,
 }
 
 template <typename Iterable, typename Func, typename Agent, typename Worker>
-RAJA_INLINE void forall(const Policy&,
+RAJA_INLINE void forall(const agency_base<Agent, Worker>&,
                         Iterable&& iter,
                         Func&& loop_body)
 {
@@ -115,10 +115,10 @@ RAJA_INLINE void forall(const Policy&,
 }
 
 template <typename Iterable, typename Func, typename Agent, typename Worker>
-RAJA_INLINE void foral_Icount(const Policy&,
-                              Iterable&& iter,
-                              Index_type icount,
-                              Func&& loop_body)
+RAJA_INLINE void forall_Icount(const agency_base<Agent, Worker>&,
+                               Iterable&& iter,
+                               Index_type icount,
+                               Func&& loop_body)
 {
   auto begin = std::begin(iter);
 
