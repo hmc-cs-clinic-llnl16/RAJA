@@ -3,21 +3,19 @@
  *
  * \file
  *
- * \brief   Main RAJA header file.
+ * \brief   Header file containing RAJA headers for Agency execution.
  *
- *          This is the main header file to include in code that uses RAJA.
- *          It includes other RAJA headers files that define types, index
- *          sets, ieration methods, etc.
- *
- *          IMPORTANT: If changes are made to this file, note that contents
- *                     of some header files require that they are included
- *                     in the order found here.
+ *          These methods work only on platforms that support Agency.
  *
  ******************************************************************************
  */
 
-#ifndef RAJA_HXX
-#define RAJA_HXX
+#ifndef RAJA_agency_HXX
+#define RAJA_agency_HXX
+
+#include "RAJA/config.hxx"
+
+#if defined(RAJA_ENABLE_AGENCY)
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2016, Lawrence Livermore National Security, LLC.
@@ -61,101 +59,49 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#include "RAJA/config.hxx"
+#include "agency/agency.hpp"
 
-#include "RAJA/internal/defines.hxx"
-
-#include "RAJA/int_datatypes.hxx"
-#include "RAJA/real_datatypes.hxx"
-
-#include "RAJA/operators.hxx"
-#include "RAJA/reducers.hxx"
-
-#include "RAJA/IndexSet.hxx"
-#include "RAJA/ListSegment.hxx"
-#include "RAJA/RangeSegment.hxx"
-
-//
-// Strongly typed index class.
-//
-#include "RAJA/IndexValue.hxx"
-
-//
-// Generic iteration templates require specializations defined
-// in the files included below.
-//
-#include "RAJA/forall_generic.hxx"
-
-#if defined(RAJA_ENABLE_NESTED)
-
-//
-// Multidimensional layouts and views.
-//
-#include "RAJA/foralln/Layout.hxx"
-#include "RAJA/foralln/View.hxx"
-
-//
-// Generic iteration templates for perfectly nested loops
-//
-#include "RAJA/foralln/Generic.hxx"
-
-#endif  // defined(RAJA_ENABLE_NESTED)
+namespace RAJA
+{
 
 //
 //////////////////////////////////////////////////////////////////////
 //
-// These contents of the header files included here define index set
-// and segment execution methods whose implementations depend on
-// programming model choice.
-//
-// The ordering of these file inclusions must be preserved since there
-// are dependencies among them.
+// Execution policies
 //
 //////////////////////////////////////////////////////////////////////
 //
 
-//
-// All platforms must support sequential execution.
-//
-#include "RAJA/exec-sequential/raja_sequential.hxx"
+///
+/// Segment execution policies
+///
 
-//
-// All platforms should support simd execution.
-//
-#include "RAJA/exec-simd/raja_simd.hxx"
+template <typename AGENT, typename WORKERS>
+struct agency_base { };
 
-#if defined(RAJA_ENABLE_CUDA)
-#include "RAJA/exec-cuda/raja_cuda.hxx"
-#endif
+using agency_parallel_exec = agency_base<agency::parallel_agent, agency::par>;
+using agency_sequential_exec = agency_base<agency::sequenced_agent, agency::seq>;
 
-#if defined(RAJA_ENABLE_OPENMP)
-#include "RAJA/exec-openmp/raja_openmp.hxx"
-#endif
+///
+///////////////////////////////////////////////////////////////////////
+///
+/// Reduction execution policies
+///
+///////////////////////////////////////////////////////////////////////
+///
 
-#if defined(RAJA_ENABLE_AGENCY)
-#include "RAJA/exec-agency/raja_agency.hxx"
-#endif
+struct agency_reduce {};
 
-#if defined(RAJA_ENABLE_CILK)
-#include "RAJA/exec-cilk/raja_cilk.hxx"
-#endif
+}  // closing brace for RAJA namespace
 
-#include "RAJA/IndexSetUtils.hxx"
+#include "RAJA/exec-agency/forall_agency.hxx"
+//#include "RAJA/exec-agency/reduce_agency.hxx"
+//#include "RAJA/exec-agency/scan_agency.hxx"
 
 #if defined(RAJA_ENABLE_NESTED)
+// #include "RAJA/exec-agency/forallN_agency.hxx"
+#endif
 
-//
-// Perfectly nested loop transformations
-//
-
-// Tiling policies
-#include "RAJA/foralln/Tile.hxx"
-
-// Loop interchange policies
-#include "RAJA/foralln/Permute.hxx"
-
-#endif  // defined(RAJA_ENABLE_NESTED)
-
-#include "RAJA/scan.hxx"
+#endif  // closing endif for if defined(RAJA_ENABLE_AGENCY)
 
 #endif  // closing endif for header file include guard

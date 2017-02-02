@@ -53,6 +53,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/thirdparty" ${CMAKE_MODULE_PA
 
 # Build options
 option(RAJA_ENABLE_OPENMP "Build OpenMP support" On)
+option(RAJA_ENABLE_AGENCY "Build Agency support" On)
 option(RAJA_ENABLE_CUDA "Build CUDA support" Off)
 option(RAJA_ENABLE_CLANG_CUDA "Use Clang's native CUDA support" Off)
 set(RAJA_CUDA_ARCH "sm_35" CACHE STRING "Compute architecture to pass to CUDA builds")
@@ -85,6 +86,16 @@ install(DIRECTORY include/ DESTINATION include FILES_MATCHING PATTERN *.hxx)
 install(FILES ${PROJECT_BINARY_DIR}/include/RAJA/config.hxx DESTINATION "include/RAJA")
 
 add_subdirectory(src)
+
+if(RAJA_ENABLE_AGENCY)
+  SET(AGENCY_CLONE_DIR ${PROJECT_SOURCE_DIR}/extra/agency)
+  if(NOT AGENCY_DIR AND NOT EXISTS ${AGENCY_CLONE_DIR})
+    message(STATUS "Cloning Agency...")
+    execute_process(COMMAND git clone https://github.com/agency-library/agency.git ${AGENCY_CLONE_DIR})
+    SET(AGENCY_DIR ${AGENCY_CLONE_DIR})
+  endif()
+  include_directories(${AGENCY_DIR})
+endif()  
 
 if(RAJA_ENABLE_TESTS)
   add_subdirectory(test)
