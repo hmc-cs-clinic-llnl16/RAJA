@@ -10,7 +10,6 @@
 
 #include <iostream>
 #include <string>
-#include <random>
 #include <vector>
 
 #include "RAJA/RAJA.hxx"
@@ -21,8 +20,6 @@ class AgencyTest : public ::testing::Test
 protected:
   virtual void SetUp()
   {
-    std::mt19937 gen(std::random_device());
-    std::uniform_real_distribution<double> dist(0, 5);
     expected = std::vector<double>(1000);
     actual = std::vector<double>(1000);
 
@@ -30,8 +27,8 @@ protected:
     x = std::vector<double>(1000);
 
     for (auto i = 0; i < 1000; ++i) {
-        y[i] = dist(gen);
-        x[i] = dist(gen);
+        y[i] = i;
+        x[i] = 1000 - i;
     }
   }
 

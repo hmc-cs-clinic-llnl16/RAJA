@@ -77,16 +77,6 @@ include(cmake/SetupRajaConfig.cmake)
 # Macros for building executables and libraries
 include (cmake/RAJAMacros.cmake)
 
-include_directories(${PROJECT_BINARY_DIR}/include/RAJA)
-include_directories(${PROJECT_BINARY_DIR}/include)
-
-include_directories(include)
-
-install(DIRECTORY include/ DESTINATION include FILES_MATCHING PATTERN *.hxx)
-install(FILES ${PROJECT_BINARY_DIR}/include/RAJA/config.hxx DESTINATION "include/RAJA")
-
-add_subdirectory(src)
-
 if(RAJA_ENABLE_AGENCY)
   SET(AGENCY_CLONE_DIR ${PROJECT_SOURCE_DIR}/extra/agency)
   if(NOT AGENCY_DIR AND NOT EXISTS ${AGENCY_CLONE_DIR})
@@ -96,6 +86,16 @@ if(RAJA_ENABLE_AGENCY)
   endif()
   include_directories(${AGENCY_DIR})
 endif()  
+
+include_directories(${PROJECT_BINARY_DIR}/include/RAJA)
+include_directories(${PROJECT_BINARY_DIR}/include)
+
+include_directories(include)
+
+install(DIRECTORY include/ DESTINATION include FILES_MATCHING PATTERN *.hxx)
+install(FILES ${PROJECT_BINARY_DIR}/include/RAJA/config.hxx DESTINATION "include/RAJA")
+
+add_subdirectory(src)
 
 if(RAJA_ENABLE_TESTS)
   add_subdirectory(test)
