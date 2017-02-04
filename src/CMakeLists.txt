@@ -39,6 +39,11 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+if(RAJA_ENABLE_AGENCY)
+  set(AGENCY_DIR "${PROJECT_SOURCE_DIR}/extra/agency")
+  message(STATUS "AGENCY src/CMakeLists.txt ${AGENCY_DIR}")
+  include_directories(${AGENCY_DIR})
+endif()  
 
 set (raja_sources 
   AlignedRangeIndexSetBuilders.cxx
