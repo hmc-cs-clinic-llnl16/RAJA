@@ -72,6 +72,14 @@
 namespace RAJA
 {
 
+namespace experimental
+{
+
+/// ASSUMPTIONS:
+///   1- That we can get the number of threads this way
+///   2- That the number of workers can be sensibly computed this way
+///   3- That the number of workers computed this way works for 
+///      sequenctuial execution.
 template <typename Func, typename Agent, typename Worker>
 RAJA_INLINE void forall(const agency_base<Agent, Worker>&, 
                         const rangeSegment& iter, 
@@ -136,6 +144,8 @@ RAJA_INLINE void forall_Icount(const agency_base<Agent, Worker>&,
                         }
                       });
 }
+
+} // closing brace for experimental namespace
 
 }  // closing brace for RAJA namespace
 
