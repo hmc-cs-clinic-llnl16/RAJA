@@ -64,6 +64,8 @@
 namespace RAJA
 {
 
+namespace experimental {
+
 //
 //////////////////////////////////////////////////////////////////////
 //
@@ -72,15 +74,26 @@ namespace RAJA
 //////////////////////////////////////////////////////////////////////
 //
 
-///
-/// Segment execution policies
-///
-
 template <typename AGENT, typename WORKERS>
 struct agency_base { };
 
 using agency_parallel_exec = agency_base<agency::parallel_agent, agency::par>;
 using agency_sequential_exec = agency_base<agency::sequenced_agent, agency::seq>;
+
+#if defined(RAJA_ENABLE_OPENMP)
+#include "agency/omp.hpp"
+
+using agency_omp_parallel_exec = agency_base<agency::parallel_agent, agency::omp::par>;
+using agency_omp_sequential_exec = agency_base<agency::sequenced_agent, agency::omp::seq>;
+
+#endif // closing endif for if defined(RAJA_ENABLE_OPENMP)
+
+#if defined(RAJA_ENABLE_CUDA)
+#include "agency/cuda.hpp"
+
+using agency_cuda_exec = agency_base<agency::parallel_agent, agency::cuda::par>;
+
+#endif // closing endif for if defined(RAJA_ENABLE_CUDA)
 
 ///
 ///////////////////////////////////////////////////////////////////////
@@ -91,6 +104,8 @@ using agency_sequential_exec = agency_base<agency::sequenced_agent, agency::seq>
 ///
 
 struct agency_reduce {};
+
+} // closing brace for experimental namespace
 
 }  // closing brace for RAJA namespace
 

@@ -37,25 +37,45 @@ protected:
 
   std::vector<double> y;
   std::vector<double> x;
+
+  template <typename Policy>
+  void forall_daxpy() {
+      double a = 17.3;
+
+      // Do expected result
+      for (auto i = 0; i < 1000; ++i) {
+        expected[i] = a*x[i] + y[i];
+      }
+
+      // Do actual result
+      RAJA::forall<Policy>(
+        0, 1000, [=](RAJA::Index_type i) {
+          actual[i] = a*x[i] + y[i];
+        });
+
+      // Validate_result
+      for (auto i = 0; i < 1000; ++i) {
+        EXPECT_EQ(actual[i], expected[i]);
+      }
+  }
 };
 
-TEST_F(AgencyTest, forall_daxpy)
+TEST_F(AgencyTest, forall_daxpy_agency_parallel)
 {
-  double a = 17.3;
+    forall_daxpy<RAJA::experimental::agency_parallel_exec>();
+}
 
-  // Do expected result
-  for (auto i = 0; i < 1000; ++i) {
-    expected[i] = a*x[i] + y[i];
-  }
+TEST_F(AgencyTest, forall_daxpy_agency_sequential)
+{
+    forall_daxpy<RAJA::experimental::agency_sequential_exec>();
+}
 
-  // Do actual result
-  RAJA::forall<RAJA::agency_parallel_exec>(
-    0, 1000, [=](RAJA::Index_type i) {
-      actual[i] = a*x[i] + y[i];
-    });
+TEST_F(AgencyTest, forall_daxpy_agency_omp_parallel)
+{
+    forall_daxpy<RAJA::experimental::agency_omp_parallel_exec>();
+}
 
-  // Validate_result
-  for (auto i = 0; i < 1000; ++i) {
-    EXPECT_EQ(actual[i], expected[i]);
-  }
+TEST_F(AgencyTest, forall_daxpy_agency_omp_sequential)
+{
+    forall_daxpy<RAJA::experimental::agency_omp_sequential_exec>();
 }
