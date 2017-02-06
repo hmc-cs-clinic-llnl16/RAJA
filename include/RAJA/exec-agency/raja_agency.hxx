@@ -77,21 +77,36 @@ namespace experimental {
 template <typename AGENT, typename WORKERS>
 struct agency_base { };
 
-using agency_parallel_exec = agency_base<agency::parallel_agent, agency::par>;
-using agency_sequential_exec = agency_base<agency::sequenced_agent, agency::seq>;
+using agency_parallel_exec = agency_base<
+    agency::parallel_agent, 
+    decltype(agency::par)
+>;
+using agency_sequential_exec = agency_base<
+    agency::sequenced_agent, 
+    decltype(agency::seq)
+>;
 
 #if defined(RAJA_ENABLE_OPENMP)
 #include "agency/omp.hpp"
 
-using agency_omp_parallel_exec = agency_base<agency::parallel_agent, agency::omp::par>;
-using agency_omp_sequential_exec = agency_base<agency::sequenced_agent, agency::omp::seq>;
+using agency_omp_parallel_exec = agency_base<
+    agency::parallel_agent, 
+    decltype(agency::omp::par)
+>;
+using agency_omp_sequential_exec = agency_base<
+    agency::sequenced_agent, 
+    decltype(agency::omp::seq)
+>;
 
 #endif // closing endif for if defined(RAJA_ENABLE_OPENMP)
 
 #if defined(RAJA_ENABLE_CUDA)
 #include "agency/cuda.hpp"
 
-using agency_cuda_exec = agency_base<agency::parallel_agent, agency::cuda::par>;
+using agency_cuda_exec = agency_base<
+    agency::parallel_agent, 
+    decltype(agency::cuda::par)
+>;
 
 #endif // closing endif for if defined(RAJA_ENABLE_CUDA)
 
@@ -114,7 +129,7 @@ struct agency_reduce {};
 //#include "RAJA/exec-agency/scan_agency.hxx"
 
 #if defined(RAJA_ENABLE_NESTED)
-// #include "RAJA/exec-agency/forallN_agency.hxx"
+#include "RAJA/exec-agency/forallN_agency.hxx"
 #endif
 
 #endif  // closing endif for if defined(RAJA_ENABLE_AGENCY)

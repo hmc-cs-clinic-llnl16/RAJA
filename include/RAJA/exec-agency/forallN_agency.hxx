@@ -61,24 +61,25 @@
 #include "RAJA/int_datatypes.hxx"
 
 #include "agency/agency.hpp"
+#include "raja_agency.hxxx"
 
 namespace RAJA
+{
+
+namespace experimental
 {
 
 /******************************************************************
  *  ForallN policies
  ******************************************************************/
 
-template <typename Agent, typename Worker>
-struct agency_exec {};
-
 template <typename Agent, typename Worker, typename... PREST>
-struct ForallN_Executor<ForallN_PolicyPair<agency_exec<Agent, Worker>,
+struct ForallN_Executor<ForallN_PolicyPair<agency_base<Agent, Worker>,
                                            RangeSegment>,
-                        ForallN_PolicyPair<agency_exec<Agent, Worker>,
+                        ForallN_PolicyPair<agency_base<Agent, Worker>,
                                            RangeSegment>,
                         PREST...> {
-  using PolicyPair = ForallN_PolicyPair<agency_exec<Agent, Worker>, RangeSegment>;
+  using PolicyPair = ForallN_PolicyPair<agency_base<Agent, Worker>, RangeSegment>;
   PolicyPair iset_i, iset_j;
 
   using NextExec = ForallN_Executor<PREST...>l
@@ -122,14 +123,14 @@ struct ForallN_Executor<ForallN_PolicyPair<agency_exec<Agent, Worker>,
 };
 
 template <typename Agent, typename Worker, typename... PREST>
-struct ForallN_Executor<ForallN_PolicyPair<agency_exec<Agent, Worker>,
+struct ForallN_Executor<ForallN_PolicyPair<agency_base<Agent, Worker>,
                                            RangeSegment>,
-                        ForallN_PolicyPair<agency_exec<Agent, Worker>,
+                        ForallN_PolicyPair<agency_base<Agent, Worker>,
                                            RangeSegment>,
-                        ForallN_PolicyPair<agency_exec<Agent, Worker>,
+                        ForallN_PolicyPair<agency_base<Agent, Worker>,
                                            RangeSegment>,
                         PREST...> {
-  using PolicyPair = ForallN_PolicyPair<agency_exec<Agent, Worker>, RangeSegment>;
+  using PolicyPair = ForallN_PolicyPair<agency_base<Agent, Worker>, RangeSegment>;
   PolicyPair iset_i, iset_j, iset_k;
 
   using NextExec = ForallN_Executor<PREST...>l
@@ -206,7 +207,9 @@ RAJA_INLINE void forallN_policy(ForallN_Agency_Parallel_Tag<Agent, Worker>,
                       });
 }
 
-}  // namespace RAJA
+} // namespace experimental
+
+} // namespace RAJA
 
 #endif  // closing endif for if defined(RAJA_ENABLE_AGENCY)
 

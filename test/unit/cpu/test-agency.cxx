@@ -60,22 +60,53 @@ protected:
   }
 };
 
-TEST_F(AgencyTest, forall_daxpy_agency_parallel)
+TEST_F(AgencyTest, forall_daxpy_parallel)
 {
     forall_daxpy<RAJA::experimental::agency_parallel_exec>();
 }
 
-TEST_F(AgencyTest, forall_daxpy_agency_sequential)
+TEST_F(AgencyTest, forall_daxpy_sequential)
 {
     forall_daxpy<RAJA::experimental::agency_sequential_exec>();
 }
 
-TEST_F(AgencyTest, forall_daxpy_agency_omp_parallel)
+#if defined(RAJA_ENABLE_OPENMP)
+TEST_F(AgencyTest, forall_daxpy_omp_parallel)
 {
     forall_daxpy<RAJA::experimental::agency_omp_parallel_exec>();
 }
 
-TEST_F(AgencyTest, forall_daxpy_agency_omp_sequential)
+TEST_F(AgencyTest, forall_daxpy_omp_sequential)
 {
     forall_daxpy<RAJA::experimental::agency_omp_sequential_exec>();
 }
+#endif // defined(RAJA_ENABLE_OPENMP)
+
+// TODO: Write icount tests
+// TODO: Make sure we test all of: RangeSegment, Iterable, Container
+
+#if defined(RAJA_ENABLE_NESTED)
+
+TEST_F(AgencyTest, forallN_mmult_parallel)
+{
+
+}
+
+TEST_F(AgencyTest, forallN_mmult_sequential)
+{
+
+}
+
+#if defined(RAJA_ENABLE_OPENMP)
+TEST_F(AgencyTest, forallN_mmult_omp_parallel)
+{
+
+}
+
+TEST_F(AgencyTest, forallN_mmult_omp_sequential)
+{
+
+}
+#endif // defined(RAJA_ENABLE_OPENMP)
+
+#endif // defined RAJA_ENABLE_NESTED
