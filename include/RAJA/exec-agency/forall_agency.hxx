@@ -89,7 +89,7 @@ RAJA_INLINE void forall(const agency_base<Agent, Worker>&,
   auto numThreads = std::max(std::thread::hardware_concurrency(), 1u);
   auto workPerThread = (std::end(iter) - std::begin(iter)) / numThreads;
 
-  agency::bulk_invoke(Worker(numThreads),
+  agency::bulk_invoke(Worker{}(numThreads),
                       [=](Agent& self) {
                         auto start = workPerThread * self.index();
                         auto end = self.index() == (numThreads - 1) 
@@ -111,7 +111,7 @@ RAJA_INLINE void forall(const agency_base<Agent, Worker>&,
   auto numThreads = std::max(std::thread::hardware_concurrency(), 1u);
   auto workPerThread = (std::end(iter) - begin) / numThreads;
 
-  agency::bulk_invoke(Worker(numThreads),
+  agency::bulk_invoke(Worker{}(numThreads),
                       [=](Agent& self) {
                         auto start = workPerThread * self.index();
                         auto end = self.index() == (numThreads - 1) 
@@ -134,7 +134,7 @@ RAJA_INLINE void forall_Icount(const agency_base<Agent, Worker>&,
   auto numThreads = std::max(std::thread::hardware_concurrency(), 1u);
   auto workPerThread = std::distance(begin, std::end(iter)) / numThreads;
 
-  agency::bulk_invoke(Worker(numThreads),
+  agency::bulk_invoke(Worker{}(numThreads),
                       [=](Agent& self) {
                         auto start = workPerThread * self.index();
                         auto end = self.index() == (numThreads - 1) 
