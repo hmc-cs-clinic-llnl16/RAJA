@@ -82,7 +82,7 @@ namespace experimental
 ///      sequenctuial execution.
 template <typename Func, typename Agent, typename Worker>
 RAJA_INLINE void forall(const agency_base<Agent, Worker>&, 
-                        const rangeSegment& iter, 
+                        const RangeSegment& iter, 
                         Func&& loop_body)
 {
   auto numThreads = max(std::thread::hardware_concurrency(), 1);
