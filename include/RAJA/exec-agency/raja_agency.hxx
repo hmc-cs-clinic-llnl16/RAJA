@@ -86,6 +86,7 @@ using agency_sequential_exec = agency_base<
     decltype(agency::seq)
 >;
 
+#if 0
 #if defined(RAJA_ENABLE_OPENMP)
 #include "agency/omp.hpp"
 
@@ -109,7 +110,7 @@ using agency_cuda_exec = agency_base<
 >;
 
 #endif // closing endif for if defined(RAJA_ENABLE_CUDA)
-
+#endif
 ///
 ///////////////////////////////////////////////////////////////////////
 ///
@@ -128,8 +129,10 @@ struct agency_reduce {};
 //#include "RAJA/exec-agency/reduce_agency.hxx"
 //#include "RAJA/exec-agency/scan_agency.hxx"
 
+#if 0
 #if defined(RAJA_ENABLE_NESTED)
 #include "RAJA/exec-agency/forallN_agency.hxx"
+#endif
 #endif
 
 #endif  // closing endif for if defined(RAJA_ENABLE_AGENCY)

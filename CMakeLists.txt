@@ -66,6 +66,8 @@ option(RAJA_ENABLE_DOCUMENTATION "Build RAJA documentation" Off)
 
 set(TEST_DRIVER "" CACHE STRING "driver used to wrap test commands")
 
+add_definitions(-std=c++11 -stdlib=libc++)
+
 # Setup basic CMake options
 include(cmake/SetupBasics.cmake)
 # Setup vendor-specific compiler flags
@@ -76,16 +78,6 @@ include(cmake/SetupPackages.cmake)
 include(cmake/SetupRajaConfig.cmake)
 # Macros for building executables and libraries
 include (cmake/RAJAMacros.cmake)
-
-if(RAJA_ENABLE_AGENCY)
-  SET(AGENCY_CLONE_DIR ${PROJECT_SOURCE_DIR}/extra/agency)
-  if(NOT AGENCY_DIR AND NOT EXISTS ${AGENCY_CLONE_DIR})
-    message(STATUS "Cloning Agency...")
-    execute_process(COMMAND git clone https://github.com/agency-library/agency.git ${AGENCY_CLONE_DIR})
-    SET(AGENCY_DIR ${AGENCY_CLONE_DIR})
-  endif()
-  include_directories(${AGENCY_DIR})
-endif()  
 
 include_directories(${PROJECT_BINARY_DIR}/include/RAJA)
 include_directories(${PROJECT_BINARY_DIR}/include)
