@@ -68,6 +68,7 @@
 
 #include <thread>
 #include <iterator>
+#include <algorithm>
 
 namespace RAJA
 {
@@ -85,8 +86,8 @@ RAJA_INLINE void forall(const agency_base<Agent, Worker>&,
                         const RangeSegment& iter, 
                         Func&& loop_body)
 {
-  auto numThreads = max(std::thread::hardware_concurrency(), 1);
-  auto workPerThread = std::distance(iter.getBegin(), iter.getEnd()) / numThreads;
+  auto numThreads = std::max(std::thread::hardware_concurrency(), 1u);
+  auto workPerThread = (std::end(iter) - std::begin(iter)) / numThreads;
 
   agency::bulk_invoke(Worker(numThreads),
                       [=](Agent& self) {
@@ -107,8 +108,8 @@ RAJA_INLINE void forall(const agency_base<Agent, Worker>&,
 {
   auto begin = std::begin(iter);
 
-  auto numThreads = max(std::thread::hardware_concurrency(), 1);
-  auto workPerThread = std::distance(begin, std::end(iter)) / numThreads;
+  auto numThreads = std::max(std::thread::hardware_concurrency(), 1u);
+  auto workPerThread = (std::end(iter) - begin) / numThreads;
 
   agency::bulk_invoke(Worker(numThreads),
                       [=](Agent& self) {
@@ -130,7 +131,7 @@ RAJA_INLINE void forall_Icount(const agency_base<Agent, Worker>&,
 {
   auto begin = std::begin(iter);
 
-  auto numThreads = max(std::thread::hardware_concurrency(), 1);
+  auto numThreads = std::max(std::thread::hardware_concurrency(), 1u);
   auto workPerThread = std::distance(begin, std::end(iter)) / numThreads;
 
   agency::bulk_invoke(Worker(numThreads),

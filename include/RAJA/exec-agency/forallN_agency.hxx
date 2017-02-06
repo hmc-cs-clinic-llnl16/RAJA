@@ -61,7 +61,7 @@
 #include "RAJA/int_datatypes.hxx"
 
 #include "agency/agency.hpp"
-#include "raja_agency.hxxx"
+#include "raja_agency.hxx"
 
 namespace RAJA
 {
