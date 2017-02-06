@@ -70,6 +70,7 @@ TEST_F(AgencyTest, forall_daxpy_sequential)
     forall_daxpy<RAJA::experimental::agency_sequential_exec>();
 }
 
+#if 0
 #if defined(RAJA_ENABLE_OPENMP)
 TEST_F(AgencyTest, forall_daxpy_omp_parallel)
 {
@@ -108,5 +109,5 @@ TEST_F(AgencyTest, forallN_mmult_omp_sequential)
 
 }
 #endif // defined(RAJA_ENABLE_OPENMP)
-
+#endif
 #endif // defined RAJA_ENABLE_NESTED
