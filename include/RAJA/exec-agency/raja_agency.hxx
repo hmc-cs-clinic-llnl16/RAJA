@@ -61,10 +61,16 @@
 
 #include "agency/agency.hpp"
 
+#if defined(RAJA_ENABLE_OPENMP)
+#    include "agency/omp.hpp"
+#endif // defined (RAJA_ENABLE_OPENMP)
+
+#if defined(RAJA_ENABLE_CUDA) && 0
+#    include "agency/cuda.hpp"
+#endif // defined (RAJA_ENABLE_CUDA)
+
 namespace RAJA
 {
-
-namespace experimental {
 
 //
 //////////////////////////////////////////////////////////////////////
@@ -86,23 +92,16 @@ using agency_sequential_exec = agency_base<
     decltype(agency::seq)
 >;
 
-#if 0
 #if defined(RAJA_ENABLE_OPENMP)
-#include "agency/omp.hpp"
 
 using agency_omp_parallel_exec = agency_base<
     agency::parallel_agent, 
     decltype(agency::omp::par)
 >;
-using agency_omp_sequential_exec = agency_base<
-    agency::sequenced_agent, 
-    decltype(agency::omp::seq)
->;
 
 #endif // closing endif for if defined(RAJA_ENABLE_OPENMP)
 
-#if defined(RAJA_ENABLE_CUDA)
-#include "agency/cuda.hpp"
+#if defined(RAJA_ENABLE_CUDA) && 0
 
 using agency_cuda_exec = agency_base<
     agency::parallel_agent, 
@@ -110,7 +109,6 @@ using agency_cuda_exec = agency_base<
 >;
 
 #endif // closing endif for if defined(RAJA_ENABLE_CUDA)
-#endif
 ///
 ///////////////////////////////////////////////////////////////////////
 ///
@@ -121,19 +119,15 @@ using agency_cuda_exec = agency_base<
 
 struct agency_reduce {};
 
-} // closing brace for experimental namespace
-
 }  // closing brace for RAJA namespace
 
 #include "RAJA/exec-agency/forall_agency.hxx"
 //#include "RAJA/exec-agency/reduce_agency.hxx"
 //#include "RAJA/exec-agency/scan_agency.hxx"
 
-#if 0
-#if defined(RAJA_ENABLE_NESTED)
-#include "RAJA/exec-agency/forallN_agency.hxx"
-#endif
-#endif
+#if defined(RAJA_ENABLE_NESTED) && 0
+#    include "RAJA/exec-agency/forallN_agency.hxx"
+#endif // defined RAJA_ENABLE_NESTED
 
 #endif  // closing endif for if defined(RAJA_ENABLE_AGENCY)
 

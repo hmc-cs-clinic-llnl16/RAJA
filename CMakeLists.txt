@@ -66,8 +66,6 @@ option(RAJA_ENABLE_DOCUMENTATION "Build RAJA documentation" Off)
 
 set(TEST_DRIVER "" CACHE STRING "driver used to wrap test commands")
 
-add_definitions(-std=c++11)
-
 # Setup basic CMake options
 include(cmake/SetupBasics.cmake)
 # Setup vendor-specific compiler flags
@@ -109,7 +107,7 @@ endif ()
 if(RAJA_ENABLE_APPLICATIONS)
   if (NOT EXISTS ${PROJECT_SOURCE_DIR}/extra/llnl-raja-proxies/CMakeLists.txt)
     message(STATUS "Cloning RAJA proxy applications...")
-    execute_process(COMMAND git clone https://github.com/hmc-cs-clinic-llnl16/RAJA-examples.git ${PROJECT_SOURCE_DIR}/extra/llnl-raja-proxies)
+    execute_process(COMMAND git clone https://github.com/LLNL/RAJA-examples.git ${PROJECT_SOURCE_DIR}/extra/llnl-raja-proxies)
   endif()
   add_subdirectory(extra/llnl-raja-proxies)
 endif()

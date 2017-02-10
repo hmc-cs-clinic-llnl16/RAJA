@@ -66,9 +66,6 @@
 namespace RAJA
 {
 
-namespace experimental
-{
-
 /******************************************************************
  *  ForallN policies
  ******************************************************************/
@@ -206,8 +203,6 @@ RAJA_INLINE void forallN_policy(ForallN_Agency_Parallel_Tag<Agent, Worker>,
                         forallN_policy<NextPolicy>(NextPolicyTag(), body, pargs);
                       });
 }
-
-} // namespace experimental
 
 } // namespace RAJA
 
