@@ -13,9 +13,10 @@
 #include <vector>
 
 #include "RAJA/RAJA.hxx"
+#include "buildIndexSet.hxx"
 #include "gtest/gtest.h"
 
-class AgencyTest : public ::testing::Test
+class AgencyForallTest : public ::testing::Test
 {
 protected:
   virtual void SetUp()
@@ -42,72 +43,109 @@ protected:
   void forall_daxpy() {
       double a = 17.3;
 
-      // Do expected result
       for (auto i = 0; i < 1000; ++i) {
         expected[i] = a*x[i] + y[i];
       }
 
-      // Do actual result
       RAJA::forall<Policy>(
         0, 1000, [=](RAJA::Index_type i) {
           actual[i] = a*x[i] + y[i];
         });
 
-      // Validate_result
       for (auto i = 0; i < 1000; ++i) {
         EXPECT_EQ(actual[i], expected[i]);
       }
   }
+
 };
 
-TEST_F(AgencyTest, forall_daxpy_parallel)
+TEST_F(AgencyForallTest, daxpy_parallel)
 {
     forall_daxpy<RAJA::experimental::agency_parallel_exec>();
 }
 
-TEST_F(AgencyTest, forall_daxpy_sequential)
+TEST_F(AgencyForallTest, daxpy_sequential)
 {
     forall_daxpy<RAJA::experimental::agency_sequential_exec>();
 }
 
-#if 0
 #if defined(RAJA_ENABLE_OPENMP)
-TEST_F(AgencyTest, forall_daxpy_omp_parallel)
+TEST_F(AgencyForallTest, daxpy_omp_parallel)
 {
     forall_daxpy<RAJA::experimental::agency_omp_parallel_exec>();
 }
-
-TEST_F(AgencyTest, forall_daxpy_omp_sequential)
-{
-    forall_daxpy<RAJA::experimental::agency_omp_sequential_exec>();
-}
 #endif // defined(RAJA_ENABLE_OPENMP)
 
-// TODO: Write icount tests
-// TODO: Make sure we test all of: RangeSegment, Iterable, Container
-
-#if defined(RAJA_ENABLE_NESTED)
-
-TEST_F(AgencyTest, forallN_mmult_parallel)
+class AgencyForallIcountTest : public ::testing::Test
 {
+protected:
+    virtual void SetUp()
+    {
+        // Init arrays
+        expected = std::vector<double>(1000);
+        actual = std::vector<double>(1000);
 
+        in_array = std::vector<double>(1000);
+        for (auto i = 0; i < 1000; ++i) {
+            in_array[i] = i;
+        }
+        
+        // Init index sets
+        for (auto ibuild = 0; ibuild < IndexSetBuildMethod::NumBuildMethods; ++ibuild) {
+            buildIndexSet(indices, static_cast<IndexSetBuildMethod>(ibuild));
+            RAJA::getIndices(is_indices[ibuild], indices[ibuild]);
+        }    
+    }
+
+    RAJA::IndexSet indices[IndexSetBuildMethod::NumBuildMethods];
+    RAJA::RAJAVec<RAJA::Index_type> is_indices[IndexSetBuildMethod::NumBuildMethods];
+
+    std::vector<double> expected;
+    std::vector<double> actual;
+
+    std::vector<double> in_array;
+
+    template <typename Policy>
+    void forall_icount() 
+    {
+        for (auto ibuild = 0; ibuild < IndexSetBuildMethod::NumBuildMethods; ++ibuild) {
+            for (size_t i = 0; i < is_indices[ibuild].size(); ++i) {
+                expected[i] = in_array[is_indices[ibuild][i]] * in_array[is_indices[ibuild][i]];
+            }
+
+            RAJA::forall_Icount<Policy>(indices[ibuild], [=](RAJA::Index_type icount, RAJA::Index_type idx) {
+                actual[icount] = in_array[idx] * in_array[idx];
+            });
+
+            for (auto i = 0; i < 1000; ++i) {
+                EXPECT_EQ(actual[i], expected[i]);
+            }
+        }    
+    }    
+};
+
+TEST_F(AgencyForallIcountTest, parallel)
+{
+    forall_icount<
+        RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::experimental::agency_parallel_exec>
+    >();
 }
 
-TEST_F(AgencyTest, forallN_mmult_sequential)
+TEST_F(AgencyForallIcountTest, sequential)
 {
-
+    forall_icount<
+        RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::experimental::agency_sequential_exec>
+    >();
 }
 
 #if defined(RAJA_ENABLE_OPENMP)
-TEST_F(AgencyTest, forallN_mmult_omp_parallel)
+TEST_F(AgencyForallIcountTest, omp_parallel)
 {
-
-}
-
-TEST_F(AgencyTest, forallN_mmult_omp_sequential)
-{
-
+    forall_icount<
+        RAJA::IndexSet::ExecPolicy<RAJA::seq_segit, RAJA::experimental::agency_omp_parallel_exec>
+    >();
 }
 #endif // defined(RAJA_ENABLE_OPENMP)
-#endif
-#endif // defined RAJA_ENABLE_NESTED
+
+// TODO: Make sure we test all of: RangeSegment, Iterable, Container
+// TODO: Test forallN

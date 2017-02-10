@@ -61,6 +61,14 @@
 
 #include "agency/agency.hpp"
 
+#if defined(RAJA_ENABLE_OPENMP)
+#    include "agency/omp.hpp"
+#endif // defined (RAJA_ENABLE_OPENMP)
+
+#if defined(RAJA_ENABLE_CUDA)
+#    include "agency/cuda.hpp"
+#endif // defined (RAJA_ENABLE_CUDA)
+
 namespace RAJA
 {
 
@@ -86,23 +94,16 @@ using agency_sequential_exec = agency_base<
     decltype(agency::seq)
 >;
 
-#if 0
 #if defined(RAJA_ENABLE_OPENMP)
-#include "agency/omp.hpp"
 
 using agency_omp_parallel_exec = agency_base<
     agency::parallel_agent, 
     decltype(agency::omp::par)
 >;
-using agency_omp_sequential_exec = agency_base<
-    agency::sequenced_agent, 
-    decltype(agency::omp::seq)
->;
 
 #endif // closing endif for if defined(RAJA_ENABLE_OPENMP)
 
 #if defined(RAJA_ENABLE_CUDA)
-#include "agency/cuda.hpp"
 
 using agency_cuda_exec = agency_base<
     agency::parallel_agent, 
@@ -110,7 +111,6 @@ using agency_cuda_exec = agency_base<
 >;
 
 #endif // closing endif for if defined(RAJA_ENABLE_CUDA)
-#endif
 ///
 ///////////////////////////////////////////////////////////////////////
 ///
@@ -131,8 +131,8 @@ struct agency_reduce {};
 
 #if 0
 #if defined(RAJA_ENABLE_NESTED)
-#include "RAJA/exec-agency/forallN_agency.hxx"
-#endif
+#    include "RAJA/exec-agency/forallN_agency.hxx"
+#endif // defined RAJA_ENABLE_NESTED
 #endif
 
 #endif  // closing endif for if defined(RAJA_ENABLE_AGENCY)
