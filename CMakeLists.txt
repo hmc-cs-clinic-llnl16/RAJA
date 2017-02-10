@@ -66,8 +66,6 @@ option(RAJA_ENABLE_DOCUMENTATION "Build RAJA documentation" Off)
 
 set(TEST_DRIVER "" CACHE STRING "driver used to wrap test commands")
 
-add_definitions(-std=c++11)
-
 # Setup basic CMake options
 include(cmake/SetupBasics.cmake)
 # Setup vendor-specific compiler flags
