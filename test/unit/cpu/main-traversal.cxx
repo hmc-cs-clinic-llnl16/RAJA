@@ -23,6 +23,7 @@
 #include "RAJA/internal/defines.hxx"
 
 using namespace RAJA;
+using namespace RAJA::experimental;
 using namespace std;
 
 #include "Compare.hxx"
@@ -144,6 +145,31 @@ void runForallTests(unsigned ibuild,
       iset,
       is_indices);
 #endif
+
+#if defined(RAJA_ENABLE_AGENCY)
+  runBasicForallTest<IndexSet::ExecPolicy<seq_segit, agency_parallel_exec> >(
+      "ExecPolicy<seq_segit, agency_parallel_exec>",
+      in_array,
+      alen,
+      iset,
+      is_indices);
+
+  runBasicForallTest<IndexSet::ExecPolicy<seq_segit, agency_sequential_exec> >(
+      "ExecPolicy<seq_segit, agency_sequencial_exec>",
+      in_array,
+      alen,
+      iset,
+      is_indices);
+
+#if defined(RAJA_ENABLE_OPENMP)
+  runBasicForallTest<IndexSet::ExecPolicy<seq_segit, agency_omp_parallel_exec> >(
+      "ExecPolicy<seq_segit, agency_omp_parallel_exec>",
+      in_array,
+      alen,
+      iset,
+      is_indices);
+#endif // defined(RAJA_ENABLE_OPENMP)
+#endif // defined(RAJA_ENABLE_AGENCY)
 
 #if defined(RAJA_ENABLE_CILK)
   runBasicForallTest<IndexSet::ExecPolicy<seq_segit, cilk_for_exec> >(
@@ -274,6 +300,35 @@ void runForall_IcountTests(unsigned ibuild,
       iset,
       is_indices);
 #endif
+
+#if defined(RAJA_ENABLE_AGENCY)
+  runBasicForall_IcountTest<IndexSet::ExecPolicy<seq_segit,
+                                                 agency_parallel_exec> >(
+      "ExecPolicy<seq_segit, agency_parallel_exec>",
+      in_array,
+      alen,
+      iset,
+      is_indices);
+
+  runBasicForall_IcountTest<IndexSet::ExecPolicy<seq_segit,
+                                                 agency_sequential_exec> >(
+      "ExecPolicy<seq_segit, agency_sequential_exec>",
+      in_array,
+      alen,
+      iset,
+      is_indices);
+
+#if defined(RAJA_ENABLE_OPENMP)
+  runBasicForall_IcountTest<IndexSet::ExecPolicy<seq_segit,
+                                                 agency_omp_parallel_exec> >(
+      "ExecPolicy<seq_segit, agency_omp_parallel_exec>",
+      in_array,
+      alen,
+      iset,
+      is_indices);
+#endif // defined(RAJA_ENABLE_OPENMP)
+
+#endif // defined(RAJA_ENABLE_AGENCY
 
 #if defined(RAJA_ENABLE_CILK)
   runBasicForall_IcountTest<IndexSet::ExecPolicy<seq_segit, cilk_for_exec> >(
