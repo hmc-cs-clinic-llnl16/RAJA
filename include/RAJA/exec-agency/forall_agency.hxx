@@ -151,9 +151,11 @@ RAJA_INLINE void forall_Icount(const agency_base<Agent, Worker>&,
                               end = start;
                               std::advance(end, workPerThread);
                           }
+
+                          Index_type icountOffset = std::distance(std::begin(iter), start);
                           auto distance = std::distance(start, end);
                           for (Index_type i = 0; i < distance; ++i) {
-                              loop_body(i + icount, start[i]);
+                              loop_body(icountOffset + i + icount, start[i]);
                           }
                       });
 }
