@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
     s_ntests_passed++;
   }
 
-#if defined(RAJA_ENABLE_AGENCY)
+#if defined(RAJA_ENABLE_AGENCY) && 0
   cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
   forall<agency_cuda_exec>(0, 0, [=] __device__ (Index_type idx) {
       test_array[idx] = parent[idx] * parent[idx];
@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
     s_ntests_passed++;
   }
 
-#if defined(RAJA_ENABLE_AGENCY)
+#if defined(RAJA_ENABLE_AGENCY) && 0
   cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
   forall<agency_cuda_exec>(0, array_length, [=] __device__ (Index_type idx) {
       test_array[idx] = parent[idx] * parent[idx];
@@ -359,7 +359,7 @@ int main(int argc, char *argv[])
     s_ntests_passed++;
   }
 
-#if defined(RAJA_ENABLE_AGENCY)
+#if defined(RAJA_ENABLE_AGENCY) && 0
   cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
   forall<IndexSet::ExecPolicy<seq_segit, agency_cuda_exec>>(
       iset, [=] __device__ (Index_type idx) {
@@ -428,7 +428,7 @@ int main(int argc, char *argv[])
   } else {
     s_ntests_passed++;
   }
-#if defined(RAJA_ENABLE_AGENCY)
+#if defined(RAJA_ENABLE_AGENCY) && 0
   cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
   forall_Icount<IndexSet::ExecPolicy<seq_segit, agency_cuda_exec>>(
       0, array_length, 0, [=] __device__ (Index_type icount, Index_type idx) {
@@ -487,7 +487,7 @@ int main(int argc, char *argv[])
     s_ntests_passed++;
   }
 
-#if defined(RAJA_ENABLE_AGENCY)
+#if defined(RAJA_ENABLE_AGENCY) && 0
   cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
   forall_Icount<IndexSet::ExecPolicy<seq_segit, agency_cuda_exec>>(
       iset, [=] __device__ (Index_type icount, Index_type idx) {
