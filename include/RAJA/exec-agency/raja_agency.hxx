@@ -118,15 +118,16 @@ using agency_cuda_exec = agency_base<
 ///
 ///////////////////////////////////////////////////////////////////////
 ///
+struct agency_reduce {
+};
 
-struct agency_reduce {};
 
 } // closing brace for experimental namespace
 
 }  // closing brace for RAJA namespace
 
 #include "RAJA/exec-agency/forall_agency.hxx"
-//#include "RAJA/exec-agency/reduce_agency.hxx"
+#include "RAJA/exec-agency/reduce_agency.hxx"
 //#include "RAJA/exec-agency/scan_agency.hxx"
 
 #if 0
