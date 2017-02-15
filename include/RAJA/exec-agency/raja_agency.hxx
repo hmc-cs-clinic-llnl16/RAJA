@@ -72,8 +72,6 @@
 namespace RAJA
 {
 
-namespace experimental {
-
 //
 //////////////////////////////////////////////////////////////////////
 //
@@ -83,7 +81,10 @@ namespace experimental {
 //
 
 template <typename AGENT, typename WORKERS>
-struct agency_base { };
+struct agency_base { 
+    using Agent_t = AGENT;
+    using Worker_t = WORKERS;
+};
 
 using agency_parallel_exec = agency_base<
     agency::parallel_agent, 
@@ -121,19 +122,15 @@ using agency_cuda_exec = agency_base<
 
 struct agency_reduce {};
 
-} // closing brace for experimental namespace
-
 }  // closing brace for RAJA namespace
 
 #include "RAJA/exec-agency/forall_agency.hxx"
 //#include "RAJA/exec-agency/reduce_agency.hxx"
 //#include "RAJA/exec-agency/scan_agency.hxx"
 
-#if 0
 #if defined(RAJA_ENABLE_NESTED)
 #    include "RAJA/exec-agency/forallN_agency.hxx"
 #endif // defined RAJA_ENABLE_NESTED
-#endif
 
 #endif  // closing endif for if defined(RAJA_ENABLE_AGENCY)
 

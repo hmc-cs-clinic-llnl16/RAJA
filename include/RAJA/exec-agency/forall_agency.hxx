@@ -73,9 +73,6 @@
 namespace RAJA
 {
 
-namespace experimental
-{
-
 /// ASSUMPTIONS:
 ///   1- That we can get the number of threads this way
 ///   2- That the number of workers can be sensibly computed this way
@@ -151,8 +148,6 @@ RAJA_INLINE void forall_Icount(const agency_base<Agent, Worker>&,
                           }
                       });
 }
-
-} // closing brace for experimental namespace
 
 }  // closing brace for RAJA namespace
 

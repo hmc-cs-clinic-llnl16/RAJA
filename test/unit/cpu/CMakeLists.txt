@@ -62,10 +62,6 @@ raja_add_test(
   SOURCES main-reduce.cxx
   DEPENDS_ON bis)
 
-raja_add_test(
-  NAME CPUnested-test
-  SOURCES main-nested.cxx)
-
 if(RAJA_ENABLE_OPENMP)
   raja_add_test(
     NAME CPUnested_reduce-test
@@ -91,5 +87,10 @@ if (NOT MSVC)
   raja_add_test(
     NAME scan-tests
       SOURCES test-scan.cxx
+      DEPENDS_ON gtest gtest_main ${CMAKE_THREAD_LIBS_INIT})
+
+  raja_add_test(
+    NAME forallN-tests
+      SOURCES test-forallN.cxx
       DEPENDS_ON gtest gtest_main ${CMAKE_THREAD_LIBS_INIT})
 endif ()

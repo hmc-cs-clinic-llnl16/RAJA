@@ -59,14 +59,12 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 #include "RAJA/int_datatypes.hxx"
-
-#include "agency/agency.hpp"
 #include "raja_agency.hxx"
 
-namespace RAJA
-{
+#include "agency/agency.hpp"
+#include "agency/experimental.hpp"
 
-namespace experimental
+namespace RAJA
 {
 
 /******************************************************************
@@ -82,7 +80,7 @@ struct ForallN_Executor<ForallN_PolicyPair<agency_base<Agent, Worker>,
   using PolicyPair = ForallN_PolicyPair<agency_base<Agent, Worker>, RangeSegment>;
   PolicyPair iset_i, iset_j;
 
-  using NextExec = ForallN_Executor<PREST...>l
+  using NextExec = ForallN_Executor<PREST...>;
   NextExec next_exec;
 
   RAJA_INLINE
@@ -104,19 +102,16 @@ struct ForallN_Executor<ForallN_PolicyPair<agency_base<Agent, Worker>,
 
     ForallN_PeelOuter<NextExec, BODY> outer(next_exec, body);
 
-    auto numThreads = max(std::thread::hardware_concurrency(), 1);
-    auto workPerThread = (end_i - begin_i) / numThreads;
+    auto numThreads = std::max(std::thread::hardware_concurrency(), 1u);
+    auto tiles = agency::experimental::tile_evenly(
+        agency::experimental::interval(begin_i, end_i), numThreads);
 
-    agency::bulk_invoke(Worker(numThreads),
+    agency::bulk_invoke(Worker{}(tiles.size()),
                         [=](Agent& self) {
-                          auto start = begin_i + workPerThread * self.index();
-                          auto end = self.index() == (numThreads - 1)
-                                        ? end_i
-                                        : start + workPerThread;
-                          for (auto i = start; i < end; ++i) {              
-                            for (auto j = begin_j; j < end_j; ++j) {
-                              outer(i, j);
-                            }
+                          for (Index_type i : tiles[self.index]) {
+                              for (Index_type j = begin_j; j < end_j; ++j) {
+                                  outer(i, j);
+                              }
                           }
                         });
   }
@@ -133,7 +128,7 @@ struct ForallN_Executor<ForallN_PolicyPair<agency_base<Agent, Worker>,
   using PolicyPair = ForallN_PolicyPair<agency_base<Agent, Worker>, RangeSegment>;
   PolicyPair iset_i, iset_j, iset_k;
 
-  using NextExec = ForallN_Executor<PREST...>l
+  using NextExec = ForallN_Executor<PREST...>;
   NextExec next_exec;
 
   RAJA_INLINE
@@ -158,21 +153,18 @@ struct ForallN_Executor<ForallN_PolicyPair<agency_base<Agent, Worker>,
 
     ForallN_PeelOuter<NextExec, BODY> outer(next_exec, body);
 
-    auto numThreads = max(std::thread::hardware_concurrency(), 1);
-    auto workPerThread = (end_i - begin_i) / numThreads;
+    auto numThreads = std::max(std::thread::hardware_concurrency(), 1u);
+    auto tiles = agency::experimental::tile_evenly(
+        agency::experimental::interval(begin_i, end_i), numThreads);
 
-    agency::bulk_invoke(Worker(numThreads),
+    agency::bulk_invoke(Worker{}(tiles.size()),
                         [=](Agent& self) {
-                          auto start = begin_i + workPerThread * self.index();
-                          auto end = self.index() == (numThreads - 1)
-                                        ? end_i
-                                        : start + workPerThread;
-                          for (auto i = start; i < end; ++i) {              
-                            for (auto j = begin_j; j < end_j; ++j) {
-                              for (auto k = begin_k; k < end_k; ++k) {
-                                outer(i, j, k);
-                              }  
-                            }
+                          for (Index_type i : tiles[self.index]) {
+                              for (Index_type j = begin_j; j < end_j; ++j) {
+                                 for (Index_type k = begin_k; k < end_k; ++k) {
+                                    outer(i, j, k);
+                                 }
+                              }
                           }
                         });
   }
@@ -188,26 +180,25 @@ template <typename Agent, typename Worker, typename NEXT = Execute>
 struct Agency_Parallel {
     using PolicyTag = ForallN_Agency_Parallel_Tag<Agent, Worker>;
     using NextPolicy = NEXT;
-}
+};
 
 /*!
  * \brief Tiling policy front-end function.
  */
-template <typename Agent, Worker, typename POLICY, typename BODY, typename... PARGS>
+template <typename POLICY, typename BODY, typename Agent, typename Worker, typename... PARGS>
 RAJA_INLINE void forallN_policy(ForallN_Agency_Parallel_Tag<Agent, Worker>,
                                 BODY body,
                                 PARGS... pargs)
 {
-  using NextPolicy = POLICY::NextPolicy;
-  using NextPoliyTag = NextPolicy::PolicyTag;
+  using NextPolicy = typename POLICY::NextPolicy;
+  using NextPolicyTag = typename NextPolicy::PolicyTag;
 
-  agency::bulk_invoke(Worker(max(std::thread::hardware_concurrency(), 1)),
-                      [=](Agent& self) {
-                        forallN_policy<NextPolicy>(NextPolicyTag(), body, pargs);
+  auto numThreads = std::max(std::thread::hardware_concurrency(), 1u);
+  agency::bulk_invoke(Worker{}(numThreads),
+                      [=](Agent&) {
+                        forallN_policy<NextPolicy>(NextPolicyTag(), body, pargs...);
                       });
 }
-
-} // namespace experimental
 
 } // namespace RAJA
 
