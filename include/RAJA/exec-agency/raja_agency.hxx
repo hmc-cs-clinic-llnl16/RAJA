@@ -72,8 +72,6 @@
 namespace RAJA
 {
 
-namespace experimental {
-
 //
 //////////////////////////////////////////////////////////////////////
 //
@@ -103,7 +101,7 @@ using agency_omp_parallel_exec = agency_base<
 
 #endif // closing endif for if defined(RAJA_ENABLE_OPENMP)
 
-#if defined(RAJA_ENABLE_CUDA)
+#if defined(RAJA_ENABLE_CUDA) && 0
 
 using agency_cuda_exec = agency_base<
     agency::parallel_agent, 
@@ -121,19 +119,15 @@ using agency_cuda_exec = agency_base<
 
 struct agency_reduce {};
 
-} // closing brace for experimental namespace
-
 }  // closing brace for RAJA namespace
 
 #include "RAJA/exec-agency/forall_agency.hxx"
 //#include "RAJA/exec-agency/reduce_agency.hxx"
 //#include "RAJA/exec-agency/scan_agency.hxx"
 
-#if 0
-#if defined(RAJA_ENABLE_NESTED)
+#if defined(RAJA_ENABLE_NESTED) && 0
 #    include "RAJA/exec-agency/forallN_agency.hxx"
 #endif // defined RAJA_ENABLE_NESTED
-#endif
 
 #endif  // closing endif for if defined(RAJA_ENABLE_AGENCY)
 

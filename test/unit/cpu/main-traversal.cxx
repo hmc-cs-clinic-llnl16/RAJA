@@ -23,7 +23,6 @@
 #include "RAJA/internal/defines.hxx"
 
 using namespace RAJA;
-using namespace RAJA::experimental;
 using namespace std;
 
 #include "Compare.hxx"
@@ -155,7 +154,7 @@ void runForallTests(unsigned ibuild,
       is_indices);
 
   runBasicForallTest<IndexSet::ExecPolicy<seq_segit, agency_sequential_exec> >(
-      "ExecPolicy<seq_segit, agency_sequencial_exec>",
+      "ExecPolicy<seq_segit, agency_sequential_exec>",
       in_array,
       alen,
       iset,
