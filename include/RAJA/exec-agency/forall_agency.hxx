@@ -134,19 +134,19 @@ RAJA_INLINE void forall_Icount(const agency_base<Agent, Worker>&,
                                Index_type icount,
                                Func&& loop_body)
 {
-  using iter_type = decltype(std::begin(iter));
   auto begin = std::begin(iter);
-  auto end = std::end(iter);
+  auto distance = std::distance(std::begin(iter), std::end(iter));
 
   auto numThreads = std::max(std::thread::hardware_concurrency(), 1u);
-  auto workPerThread = std::distance(begin, end) / numThreads;
+  auto workPerThread = distance / numThreads;
 
   agency::bulk_invoke(Worker{}(numThreads),
                       [=](Agent& self) {
+                          Index_type start = self.index() * workPerThread;
                           Index_type finish = self.index() == (numThreads - 1)
-                                                ? std::distance(begin, end) 
-                                                : workPerThread * (self.index() + 1);
-                          for (Index_type i = workPerThread * self.index(); i < finish; ++i) {
+                                                ? distance
+                                                : start + workPerThread;
+                          for (Index_type i = start; i < finish; ++i) {
                               loop_body(i + icount, begin[i]);
                           }
                       });
