@@ -65,7 +65,7 @@
 #    include "agency/omp.hpp"
 #endif // defined (RAJA_ENABLE_OPENMP)
 
-#if defined(RAJA_ENABLE_CUDA)
+#if defined(RAJA_ENABLE_CUDA) && 0
 #    include "agency/cuda.hpp"
 #endif // defined (RAJA_ENABLE_CUDA)
 
