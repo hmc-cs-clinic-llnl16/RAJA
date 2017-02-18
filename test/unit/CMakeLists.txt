@@ -41,6 +41,11 @@
 #
 ###############################################################################
 
+if(RAJA_ENABLE_AGENCY)
+  set(AGENCY_DIR "${PROJECT_SOURCE_DIR}/extra/agency")
+  include_directories(SYSTEM ${AGENCY_DIR})
+endif()  
+
 if (NOT MSVC)
   raja_add_test(
     NAME layout-test
