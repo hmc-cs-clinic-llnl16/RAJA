@@ -124,3 +124,18 @@ using CilkTypes = ::testing::Types<
 
 INSTANTIATE_TYPED_TEST_CASE_P(Cilk, ForallTest, CilkTypes);
 #endif
+
+#if defined(RAJA_ENABLE_AGENCY)
+using AgencyTypes = ::testing::Types<
+    IndexSet::ExecPolicy<seq_segit, agency_sequential_exec>,
+    IndexSet::ExecPolicy<seq_segit, agency_parallel_exec>>;
+
+INSTANTIATE_TYPED_TEST_CASE_P(Agency, ForallTest, AgencyTypes);
+
+#if defined(RAJA_ENABLE_OPENMP)
+using AgencyOMPTypes = ::testing::Types<
+    IndexSet::ExecPolicy<seq_segit, agency_omp_parallel_exec>>;
+
+INSTANTIATE_TYPED_TEST_CASE_P(AgencyOMP, ForallTest, AgencyOMPTypes);
+#endif
+#endif
