@@ -45,6 +45,10 @@ if (NOT RAJA_ENABLE_NESTED)
   add_definitions(-DRAJA_ENABLE_NESTED)
 endif()
 
+if (RAJA_ENABLE_AGENCY)
+  include_directories(SYSTEM "${PROJECT_SOURCE_DIR}/extra/agency")
+endif()
+
 raja_add_library(NAME bis SOURCES buildIndexSet.cxx)
 
 raja_add_test(
