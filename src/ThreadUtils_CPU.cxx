@@ -63,6 +63,7 @@
 #endif
 
 #include <algorithm>
+#include <thread>
 
 namespace RAJA
 {
@@ -84,6 +85,9 @@ int getMaxReduceThreadsCPU()
 #if defined(RAJA_ENABLE_CILK)
   int nworkers = __cilkrts_get_nworkers();
   nthreads = std::max(nthreads, nworkers);
+#endif
+#if defined(RAJA_ENABLE_AGENCY)
+  nthreads = std::max(nthreads, static_cast<int>(std::thread::hardware_concurrency()));
 #endif
 
   return nthreads;

@@ -3,21 +3,19 @@
  *
  * \file
  *
- * \brief   Main RAJA header file.
+ * \brief   Header file containing RAJA headers for Agency execution.
  *
- *          This is the main header file to include in code that uses RAJA.
- *          It includes other RAJA headers files that define types, index
- *          sets, ieration methods, etc.
- *
- *          IMPORTANT: If changes are made to this file, note that contents
- *                     of some header files require that they are included
- *                     in the order found here.
+ *          These methods work only on platforms that support Agency.
  *
  ******************************************************************************
  */
 
-#ifndef RAJA_HXX
-#define RAJA_HXX
+#ifndef RAJA_agency_HXX
+#define RAJA_agency_HXX
+
+#include "RAJA/config.hxx"
+
+#if defined(RAJA_ENABLE_AGENCY)
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2016, Lawrence Livermore National Security, LLC.
@@ -61,101 +59,67 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#include "RAJA/config.hxx"
-
-#include "RAJA/internal/defines.hxx"
-
-#include "RAJA/int_datatypes.hxx"
-#include "RAJA/real_datatypes.hxx"
-
-#include "RAJA/operators.hxx"
-#include "RAJA/reducers.hxx"
-
-#include "RAJA/IndexSet.hxx"
-#include "RAJA/ListSegment.hxx"
-#include "RAJA/RangeSegment.hxx"
-
-//
-// Strongly typed index class.
-//
-#include "RAJA/IndexValue.hxx"
-
-//
-// Generic iteration templates require specializations defined
-// in the files included below.
-//
-#include "RAJA/forall_generic.hxx"
-
-//
-// Multidimensional layouts and views.
-//
-#include "RAJA/foralln/Layout.hxx"
-#include "RAJA/foralln/OffsetLayout.hxx"
-#include "RAJA/foralln/View.hxx"
-
-#if defined(RAJA_ENABLE_NESTED)
-//
-// Generic iteration templates for perfectly nested loops
-//
-#include "RAJA/foralln/Generic.hxx"
-
-#endif  // defined(RAJA_ENABLE_NESTED)
-
-//
-//////////////////////////////////////////////////////////////////////
-//
-// These contents of the header files included here define index set
-// and segment execution methods whose implementations depend on
-// programming model choice.
-//
-// The ordering of these file inclusions must be preserved since there
-// are dependencies among them.
-//
-//////////////////////////////////////////////////////////////////////
-//
-
-//
-// All platforms must support sequential execution.
-//
-#include "RAJA/exec-sequential/raja_sequential.hxx"
-
-//
-// All platforms should support simd execution.
-//
-#include "RAJA/exec-simd/raja_simd.hxx"
-
-#if defined(RAJA_ENABLE_CUDA)
-#include "RAJA/exec-cuda/raja_cuda.hxx"
-#endif
+#include "agency/agency.hpp"
 
 #if defined(RAJA_ENABLE_OPENMP)
-#include "RAJA/exec-openmp/raja_openmp.hxx"
+#   include "agency/omp.hpp"
 #endif
 
-#if defined(RAJA_ENABLE_AGENCY)
-#include "RAJA/exec-agency/raja_agency.hxx"
-#endif
-
-#if defined(RAJA_ENABLE_CILK)
-#include "RAJA/exec-cilk/raja_cilk.hxx"
-#endif
-
-#include "RAJA/IndexSetUtils.hxx"
-
-#if defined(RAJA_ENABLE_NESTED)
+// TODO: Add CUDA Agency include
+namespace RAJA
+{
 
 //
-// Perfectly nested loop transformations
+//////////////////////////////////////////////////////////////////////
+//
+// Execution policies
+//
+//////////////////////////////////////////////////////////////////////
 //
 
-// Tiling policies
-#include "RAJA/foralln/Tile.hxx"
+template <typename AGENT, typename WORKER>
+struct agency_base { };
 
-// Loop interchange policies
-#include "RAJA/foralln/Permute.hxx"
+using agency_parallel_exec = agency_base<
+  agency::parallel_agent, 
+  decltype(agency::par)
+>;
 
-#endif  // defined(RAJA_ENABLE_NESTED)
+using agency_sequential_exec = agency_base<
+  agency::sequenced_agent, 
+  decltype(agency::seq)
+>;
 
-#include "RAJA/scan.hxx"
+#if defined(RAJA_ENABLE_OPENMP)
+using agency_omp_parallel_exec = agency_base<
+  agency::parallel_agent, 
+  decltype(agency::omp::par)
+>;
+#endif
+
+// TODO: Add CUDA Agency policy
+
+//
+//////////////////////////////////////////////////////////////////////
+//
+// Reduction policies
+//
+//////////////////////////////////////////////////////////////////////
+//
+
+struct agency_reduce { };
+
+}  // closing brace for RAJA namespace
+
+#include "RAJA/exec-agency/forall_agency.hxx"
+// TODO: Implement reduce, scan, forallN
+// #include "RAJA/exec-agency/reduce_agency.hxx"
+// #include "RAJA/exec-agency/scan_agency.hxx"
+// 
+// #if defined(RAJA_ENABLE_NESTED)
+// #include "RAJA/exec-agency/forallN_agency.hxx"
+// #endif
+
+#endif  // closing endif for if defined(RAJA_ENABLE_AGENCY)
 
 #endif  // closing endif for header file include guard

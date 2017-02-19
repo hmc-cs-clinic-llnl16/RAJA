@@ -116,6 +116,21 @@ using OpenMPTypes = ::testing::Types<
 INSTANTIATE_TYPED_TEST_CASE_P(OpenMP, ForallTest, OpenMPTypes);
 #endif
 
+#if defined(RAJA_ENABLE_AGENCY)
+using AgencyTypes = ::testing::Types<
+    IndexSet::ExecPolicy<seq_segit, agency_parallel_exec>,
+    IndexSet::ExecPolicy<seq_segit, agency_sequential_exec>>;
+
+INSTANTIATE_TYPED_TEST_CASE_P(Agency, ForallTest, AgencyTypes);
+
+#if defined(RAJA_ENABLE_OPENMP)
+using AgencyOpenMPTypes = ::testing::Types<
+    IndexSet::ExecPolicy<seq_segit, agency_omp_parallel_exec>>;
+    
+INSTANTIATE_TYPED_TEST_CASE_P(AgencyOpenMP, ForallTest, AgencyOpenMPTypes);
+#endif
+#endif
+
 #if defined(RAJA_ENABLE_CILK)
 using CilkTypes = ::testing::Types<
     IndexSet::ExecPolicy<seq_segit, cilk_for_exec>,
