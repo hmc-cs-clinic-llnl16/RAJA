@@ -395,8 +395,72 @@ INSTANTIATE_TYPED_TEST_CASE_P(OpenMP, ForallNKernelTest, LTimesOpenMPTypes);
 #endif
 
 #if defined(RAJA_ENABLE_AGENCY)
-// TODO: Write code here, depends on permute and tiling impl
-#if defined(RAJA_ENABLE_OPENMP)
+using LTimesAgencyTypes = ::testing::Types<
+    std::tuple<
+        RAJA::View<double, RAJA::Layout<int, RAJA::PERM_IJ, IMoment, IDirection>>,
+        RAJA::View<double, RAJA::Layout<int, RAJA::PERM_KJI, IDirection, IGroup, IZone>>,
+        RAJA::View<double, RAJA::Layout<int, RAJA::PERM_KJI, IMoment, IGroup, IZone>>,
+        RAJA::NestedPolicy<
+            RAJA::ExecList<
+                RAJA::seq_exec, RAJA::seq_exec, 
+                RAJA::seq_exec, RAJA::agency_parallel_exec>,
+            RAJA::Agency_Parallel<
+                RAJA::agency_parallel_exec::Agent_t,
+                RAJA::agency_parallel_exec::Worker_t,
+                RAJA::Permute<RAJA::PERM_LKIJ>>>>,
+    std::tuple<
+        RAJA::View<double, RAJA::Layout<int, RAJA::PERM_IJ, IMoment, IDirection>>,
+        RAJA::View<double, RAJA::Layout<int, RAJA::PERM_KJI, IDirection, IGroup, IZone>>,
+        RAJA::View<double, RAJA::Layout<int, RAJA::PERM_KJI, IMoment, IGroup, IZone>>,
+        RAJA::NestedPolicy<
+            RAJA::ExecList<
+                RAJA::seq_exec, RAJA::seq_exec, 
+                RAJA::seq_exec, RAJA::agency_parallel_exec>,
+            RAJA::Agency_Parallel<
+                RAJA::agency_parallel_exec::Agent_t,
+                RAJA::agency_parallel_exec::Worker_t,
+                RAJA::Tile<
+                    RAJA::TileList<RAJA::tile_none, RAJA::tile_none,
+                                   RAJA::tile_none, RAJA::tile_fixed<16>>,
+                    RAJA::Permute<
+                        RAJA::PERM_LKIJ, 
+                        RAJA::Execute // implict
+                        >>>>>>;
 
+INSTANTIATE_TYPED_TEST_CASE_P(Agency, ForallNKernelTest, LTimesAgencyTypes); 
+#if defined(RAJA_ENABLE_OPENMP)
+using LTimesAgencyOpenMPTypes = ::testing::Types<
+    std::tuple<
+        RAJA::View<double, RAJA::Layout<int, RAJA::PERM_IJ, IMoment, IDirection>>,
+        RAJA::View<double, RAJA::Layout<int, RAJA::PERM_KJI, IDirection, IGroup, IZone>>,
+        RAJA::View<double, RAJA::Layout<int, RAJA::PERM_KJI, IMoment, IGroup, IZone>>,
+        RAJA::NestedPolicy<
+            RAJA::ExecList<
+                RAJA::seq_exec, RAJA::seq_exec, 
+                RAJA::seq_exec, RAJA::agency_omp_parallel_exec>,
+            RAJA::Agency_Parallel<
+                RAJA::agency_omp_parallel_exec::Agent_t,
+                RAJA::agency_omp_parallel_exec::Worker_t,
+                RAJA::Permute<RAJA::PERM_LKIJ>>>>,
+    std::tuple<
+        RAJA::View<double, RAJA::Layout<int, RAJA::PERM_IJ, IMoment, IDirection>>,
+        RAJA::View<double, RAJA::Layout<int, RAJA::PERM_KJI, IDirection, IGroup, IZone>>,
+        RAJA::View<double, RAJA::Layout<int, RAJA::PERM_KJI, IMoment, IGroup, IZone>>,
+        RAJA::NestedPolicy<
+            RAJA::ExecList<
+                RAJA::seq_exec, RAJA::seq_exec, 
+                RAJA::seq_exec, RAJA::agency_omp_parallel_exec>,
+            RAJA::Agency_Parallel<
+                RAJA::agency_omp_parallel_exec::Agent_t,
+                RAJA::agency_omp_parallel_exec::Worker_t,
+                RAJA::Tile<
+                    RAJA::TileList<RAJA::tile_none, RAJA::tile_none,
+                                   RAJA::tile_none, RAJA::tile_fixed<16>>,
+                    RAJA::Permute<
+                        RAJA::PERM_LKIJ, 
+                        RAJA::Execute // implict
+                        >>>>>>;
+
+INSTANTIATE_TYPED_TEST_CASE_P(AgencyOpenMP, ForallNKernelTest, LTimesAgencyOpenMPTypes); 
 #endif
 #endif
