@@ -197,12 +197,17 @@ RAJA_INLINE void forallN_policy(ForallN_Agency_Parallel_Tag<Agent, Worker>,
   using NextPolicy = typename POLICY::NextPolicy;
   using NextPolicyTag = typename POLICY::NextPolicy::PolicyTag;
 
-  auto numThreads = getMaxReduceThreadsCPU();
+  // It works if we leave it like this, but not if the part below
+  // is commented out.
+  // This feels weird...
+  forallN_policy<NextPolicy>(NextPolicyTag(), body, pargs...);
 
-  agency::bulk_invoke(Worker{}(numThreads),
-                      [=](Agent&) {
-                          forallN_policy<NextPolicy>(NextPolicyTag(), body, pargs...);
-                      });
+ //  auto numThreads = getMaxReduceThreadsCPU();
+
+ //  agency::bulk_invoke(Worker{}(numThreads),
+ //                      [=](Agent&) {
+ //                          forallN_policy<NextPolicy>(NextPolicyTag(), body, pargs...);
+ //                      });
 }
 
 }  // namespace RAJA
