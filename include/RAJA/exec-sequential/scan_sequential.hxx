@@ -69,6 +69,12 @@ namespace detail
 namespace scan
 {
 
+RAJA_INLINE
+int firstIndex(int n, int p, int pid)
+{
+  return static_cast<size_t>(n * pid) / p;
+}
+
 /*!
         \brief explicit inclusive inplace scan given range, function, and
    initial value

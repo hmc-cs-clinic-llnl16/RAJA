@@ -8,8 +8,8 @@
 ******************************************************************************
 */
 
-#ifndef RAJA_scan_openmp_HXX
-#define RAJA_scan_openmp_HXX
+#ifndef RAJA_scan_agency_HXX
+#define RAJA_scan_agency_HXX
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2016, Lawrence Livermore National Security, LLC.
@@ -54,10 +54,11 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 #include "RAJA/config.hxx"
-
 #include "RAJA/exec-sequential/scan_sequential.hxx"
+#include "RAJA/ThreadUtils_CPU.hxx"
 
-#include <omp.h>
+#include "agency/agency.hpp"
+#include "agency/experimental.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -76,74 +77,97 @@ namespace scan
         \brief explicit inclusive inplace scan given range, function, and
    initial value
 */
-template <typename Iter, typename BinFn, typename ValueT>
-void inclusive_inplace(const ::RAJA::omp_parallel_for_exec&,
+template <typename Iter, typename BinFn, typename ValueT, typename Worker>
+void inclusive_inplace(const ::RAJA::agency_base<agency::parallel_agent, Worker>&,
                        Iter begin,
                        Iter end,
                        BinFn f,
                        ValueT v)
 {
   using Value = typename ::std::iterator_traits<Iter>::value_type;
+
   const int n = end - begin;
-  const int p = omp_get_max_threads();
+  auto tiles = agency::experimental::tile_evenly(
+      agency::experimental::interval(0, n), getMaxReduceThreadsCPU());
+  const int p = tiles.size();
+
   ::std::vector<Value> sums(p, v);
-#pragma omp parallel
-  {
-    const int pid = omp_get_thread_num();
-    const int i0 = firstIndex(n, p, pid);
-    const int i1 = firstIndex(n, p, pid + 1);
-    inclusive_inplace(::RAJA::seq_exec{}, begin + i0, begin + i1, f, v);
-    sums[pid] = *(begin + i1 - 1);
-#pragma omp barrier
-#pragma omp single
-    exclusive_inplace(
-        ::RAJA::seq_exec{}, sums.data(), sums.data() + p, f, BinFn::identity);
-    for (int i = i0; i < i1; ++i) {
-      *(begin + i) = f(*(begin + i), sums[pid]);
-    }
-  }
+  auto sumsP = &sums[0];
+
+  agency::bulk_invoke(agency::con(p),
+                      [=](agency::concurrent_agent& self) {
+                          const int pid = self.index();
+                          const int i0 = firstIndex(n, p, pid);
+                          const int i1 = firstIndex(n, p, pid + 1);
+                          inclusive_inplace(::RAJA::seq_exec{}, begin + i0, begin + i1, f, v);
+                          sumsP[pid] = *(begin + i1 - 1);
+
+                          self.wait();
+                          if (self.index() == 0) {
+                              exclusive_inplace(
+                                  ::RAJA::seq_exec{}, sumsP, sumsP + p, f, BinFn::identity);
+                          }
+                          // self.wait();
+
+                          for (int i = i0; i < i1; ++i) {
+                              *(begin + i) = f(*(begin + i), sumsP[pid]);
+                          }
+                      });
 }
 
 /*!
         \brief explicit exclusive inplace scan given range, function, and
    initial value
 */
-template <typename Iter, typename BinFn, typename ValueT>
-void exclusive_inplace(const ::RAJA::omp_parallel_for_exec&,
+template <typename Iter, typename BinFn, typename ValueT, typename Worker>
+void exclusive_inplace(const ::RAJA::agency_base<agency::parallel_agent, Worker>&,
                        Iter begin,
                        Iter end,
                        BinFn f,
                        ValueT v)
 {
   using Value = typename ::std::iterator_traits<Iter>::value_type;
+
   const int n = end - begin;
-  const int p = omp_get_max_threads();
+  auto tiles = agency::experimental::tile_evenly(
+      agency::experimental::interval(0, n), getMaxReduceThreadsCPU());
+  const int p = tiles.size();
+
   ::std::vector<Value> sums(p, v);
-#pragma omp parallel
-  {
-    const int pid = omp_get_thread_num();
-    const int i0 = firstIndex(n, p, pid);
-    const int i1 = firstIndex(n, p, pid + 1);
-    const Value init = ((pid == 0) ? v : *(begin + i0 - 1));
-#pragma omp barrier
-    exclusive_inplace(seq_exec{}, begin + i0, begin + i1, f, init);
-    sums[pid] = *(begin + i1 - 1);
-#pragma omp barrier
-#pragma omp single
-    exclusive_inplace(
-        seq_exec{}, sums.data(), sums.data() + p, f, BinFn::identity);
-    for (int i = i0; i < i1; ++i) {
-      *(begin + i) = f(*(begin + i), sums[pid]);
-    }
-  }
+  auto sumsP = &sums[0];
+
+  agency::bulk_invoke(agency::con(p),
+                      [=](agency::concurrent_agent& self) {
+                          const int pid = self.index();
+                          const int i0 = firstIndex(n, p, pid);
+                          const int i1 = firstIndex(n, p, pid + 1);
+                          const Value init = pid == 0 
+                                                ? v
+                                                : *(begin + i0 - 1);
+                          self.wait();
+                          
+                          exclusive_inplace(::RAJA::seq_exec{}, begin + i0, begin + i1, f, init);
+                          sumsP[pid] = *(begin + i1 - 1);
+                          self.wait();
+
+                          if (self.index() == 0) {
+                              exclusive_inplace(
+                                  ::RAJA::seq_exec{}, sumsP, sumsP + p, f, BinFn::identity);
+                          }
+                          // self.wait()
+
+                          for (int i = i0; i < i1; ++i) {
+                              *(begin + i) = f(*(begin + i), sumsP[pid]);
+                          }
+                      });
 }
 
 /*!
         \brief explicit inclusive scan given input range, output, function, and
    initial value
 */
-template <typename Iter, typename OutIter, typename BinFn, typename ValueT>
-void inclusive(const ::RAJA::omp_parallel_for_exec& exec,
+template <typename Iter, typename OutIter, typename BinFn, typename ValueT, typename Worker>
+void inclusive(const ::RAJA::agency_base<agency::parallel_agent, Worker>& exec,
                Iter begin,
                Iter end,
                OutIter out,
@@ -158,8 +182,8 @@ void inclusive(const ::RAJA::omp_parallel_for_exec& exec,
         \brief explicit exclusive scan given input range, output, function, and
    initial value
 */
-template <typename Iter, typename OutIter, typename BinFn, typename ValueT>
-void exclusive(const ::RAJA::omp_parallel_for_exec& exec,
+template <typename Iter, typename OutIter, typename BinFn, typename ValueT, typename Worker>
+void exclusive(const ::RAJA::agency_base<agency::parallel_agent, Worker>& exec,
                Iter begin,
                Iter end,
                OutIter out,

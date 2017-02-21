@@ -20,11 +20,18 @@ const int N = 1024;
 
 // Unit Test Space Exploration
 
+using ExecTypes = std::tuple<
+    RAJA::seq_exec
 #ifdef RAJA_ENABLE_OPENMP
-using ExecTypes = std::tuple<RAJA::seq_exec, RAJA::omp_parallel_for_exec>;
-#else
-using ExecTypes = std::tuple<RAJA::seq_exec>;
+    , RAJA::omp_parallel_for_exec
 #endif
+#ifdef RAJA_ENABLE_AGENCY
+    , RAJA::agency_parallel_exec
+#ifdef RAJA_ENABLE_OPENMP
+    , RAJA::agency_omp_parallel_exec
+#endif
+#endif
+>;
 
 using ReduceTypes = std::tuple<RAJA::operators::safe_plus<int>,
                                RAJA::operators::safe_plus<float>,
@@ -49,7 +56,7 @@ struct ForTesting {
 
 template <typename... Ts>
 struct ForTesting<std::tuple<Ts...>> {
-  using type = testing::Types<Ts...>;
+  using type = ::testing::Types<Ts...>;
 };
 
 using CrossTypes = ForTesting<Types>::type;

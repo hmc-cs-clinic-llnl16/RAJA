@@ -67,7 +67,7 @@ if (RAJA_ENABLE_AGENCY)
       SET(AGENCY_INCLUDE_DIR ${AGENCY_CLONE_DIR})
     endif()
   endif()
-  include_directories(${AGENCY_INCLUDE_DIR})
+  include_directories(SYSTEM ${AGENCY_INCLUDE_DIR})
 endif()
 
 if (RAJA_ENABLE_CUDA)
