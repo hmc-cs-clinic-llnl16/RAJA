@@ -43,4 +43,8 @@
 
 include_directories(include)
 
+if (RAJA_ENABLE_AGENCY)
+  include_directories(SYSTEM "${PROJECT_SOURCE_DIR}/extra/agency")
+endif()
+
 add_subdirectory(unit)

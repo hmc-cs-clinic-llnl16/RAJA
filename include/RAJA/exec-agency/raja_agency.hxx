@@ -112,9 +112,11 @@ struct agency_reduce { };
 }  // closing brace for RAJA namespace
 
 #include "RAJA/exec-agency/forall_agency.hxx"
-// TODO: Implement reduce, scan, forallN
+
+// TODO: Implement reduce
 // #include "RAJA/exec-agency/reduce_agency.hxx"
-// #include "RAJA/exec-agency/scan_agency.hxx"
+#include "RAJA/exec-agency/scan_agency.hxx"
+ 
 // 
 // #if defined(RAJA_ENABLE_NESTED)
 // #include "RAJA/exec-agency/forallN_agency.hxx"
