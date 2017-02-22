@@ -107,7 +107,7 @@ void inclusive_inplace(const ::RAJA::agency_base<agency::parallel_agent, Worker>
                               exclusive_inplace(
                                   ::RAJA::seq_exec{}, sumsP, sumsP + p, f, BinFn::identity);
                           }
-                          // self.wait();
+                          self.wait();
 
                           for (int i = i0; i < i1; ++i) {
                               *(begin + i) = f(*(begin + i), sumsP[pid]);
@@ -154,7 +154,7 @@ void exclusive_inplace(const ::RAJA::agency_base<agency::parallel_agent, Worker>
                               exclusive_inplace(
                                   ::RAJA::seq_exec{}, sumsP, sumsP + p, f, BinFn::identity);
                           }
-                          // self.wait()
+                          self.wait();
 
                           for (int i = i0; i < i1; ++i) {
                               *(begin + i) = f(*(begin + i), sumsP[pid]);

@@ -20,18 +20,21 @@ const int N = 1024;
 
 // Unit Test Space Exploration
 
-using ExecTypes = std::tuple<
-    RAJA::seq_exec
-#ifdef RAJA_ENABLE_OPENMP
-    , RAJA::omp_parallel_for_exec
+// We have to do all of them separately like this so the
+// Cross works; otherwise we end up with too many template arguments
+// and it kills the compiler
+//
+// Doing all of these _drastically_ increases compilation time.
+using SequentialExecTypes = std::tuple<RAJA::seq_exec>;
+#if defined(RAJA_ENABLE_OPENMP)
+using OpenMPExecTypes = std::tuple<RAJA::omp_parallel_for_exec>;
 #endif
-#ifdef RAJA_ENABLE_AGENCY
-    , RAJA::agency_parallel_exec
-#ifdef RAJA_ENABLE_OPENMP
-    , RAJA::agency_omp_parallel_exec
+#if defined(RAJA_ENABLE_AGENCY)
+using AgencyExecTypes = std::tuple<RAJA::agency_parallel_exec>;
+#if defined(RAJA_ENABLE_OPENMP)
+using AgencyOpenMPExecTypes = std::tuple<RAJA::agency_omp_parallel_exec>;
 #endif
 #endif
->;
 
 using ReduceTypes = std::tuple<RAJA::operators::safe_plus<int>,
                                RAJA::operators::safe_plus<float>,
@@ -48,7 +51,16 @@ using InPlaceTypes = std::tuple<std::false_type, std::true_type>;
 template <typename T1, typename T2>
 using Cross = typename types::product<T1, T2>;
 
-using Types = Cross<Cross<ExecTypes, ReduceTypes>::type, InPlaceTypes>::type;
+using SequentialTypes = Cross<Cross<SequentialExecTypes, ReduceTypes>::type, InPlaceTypes>::type;
+#if defined(RAJA_ENABLE_OPENMP)
+using OpenMPTypes = Cross<Cross<OpenMPExecTypes, ReduceTypes>::type, InPlaceTypes>::type;
+#endif
+#if defined(RAJA_ENABLE_AGENCY)
+using AgencyTypes = Cross<Cross<AgencyExecTypes, ReduceTypes>::type, InPlaceTypes>::type;
+#if defined(RAJA_ENABLE_OPENMP)
+using AgencyOpenMPTypes = Cross<Cross<AgencyOpenMPExecTypes, ReduceTypes>::type, InPlaceTypes>::type;
+#endif
+#endif
 
 template <typename T>
 struct ForTesting {
@@ -59,7 +71,16 @@ struct ForTesting<std::tuple<Ts...>> {
   using type = ::testing::Types<Ts...>;
 };
 
-using CrossTypes = ForTesting<Types>::type;
+using SequentialCrossTypes = ForTesting<SequentialTypes>::type;
+#if defined(RAJA_ENABLE_OPENMP)
+using OpenMPCrossTypes = ForTesting<OpenMPTypes>::type;
+#endif
+#if defined(RAJA_ENABLE_AGENCY)
+using AgencyCrossTypes = ForTesting<AgencyTypes>::type;
+#if defined(RAJA_ENABLE_OPENMP)
+using AgencyOpenMPCrossTypes = ForTesting<AgencyOpenMPTypes>::type;
+#endif
+#endif
 
 
 // dispatchers
@@ -201,5 +222,17 @@ TYPED_TEST_P(ExclusiveScanTest, ExclusiveCorrectness)
 REGISTER_TYPED_TEST_CASE_P(InclusiveScanTest, InclusiveCorrectness);
 REGISTER_TYPED_TEST_CASE_P(ExclusiveScanTest, ExclusiveCorrectness);
 
-INSTANTIATE_TYPED_TEST_CASE_P(Scan, InclusiveScanTest, CrossTypes);
-INSTANTIATE_TYPED_TEST_CASE_P(Scan, ExclusiveScanTest, CrossTypes);
+INSTANTIATE_TYPED_TEST_CASE_P(SequentialScan, InclusiveScanTest, SequentialCrossTypes);
+INSTANTIATE_TYPED_TEST_CASE_P(SequentialScan, ExclusiveScanTest, SequentialCrossTypes);
+#if defined(RAJA_ENABLE_OPENMP)
+INSTANTIATE_TYPED_TEST_CASE_P(OpenMPScan, InclusiveScanTest, OpenMPCrossTypes);
+INSTANTIATE_TYPED_TEST_CASE_P(OpenMPScan, ExclusiveScanTest, OpenMPCrossTypes);
+#endif
+#if defined(RAJA_ENABLE_AGENCY)
+INSTANTIATE_TYPED_TEST_CASE_P(AgencyScan, InclusiveScanTest, AgencyCrossTypes);
+INSTANTIATE_TYPED_TEST_CASE_P(AgencyScan, ExclusiveScanTest, AgencyCrossTypes);
+#if defined(RAJA_ENABLE_OPENMP)
+INSTANTIATE_TYPED_TEST_CASE_P(AgencyOpenMPScan, InclusiveScanTest, AgencyOpenMPCrossTypes);
+INSTANTIATE_TYPED_TEST_CASE_P(AgencyOpenMPScan, ExclusiveScanTest, AgencyOpenMPCrossTypes);
+#endif
+#endif
