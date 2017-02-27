@@ -41,11 +41,18 @@
 #
 ###############################################################################
 
-if(RAJA_ENABLE_AGENCY)
-  set(AGENCY_DIR "${PROJECT_SOURCE_DIR}/extra/agency")
-  message(STATUS "AGENCY test/unit/CMakeLists.txt ${AGENCY_DIR}")
-  include_directories(SYSTEM ${AGENCY_DIR})
-endif()  
+
+if (RAJA_ENABLE_AGENCY)
+  include_directories(SYSTEM "${PROJECT_SOURCE_DIR}/extra/agency")
+endif()
+
+if (NOT MSVC)
+  raja_add_test(
+    NAME layout-test
+    SOURCES test-layout.cxx
+    DEPENDS_ON gtest gtest_main ${CMAKE_THREAD_LIBS_INIT}
+  )
+endif()
 
 add_subdirectory(cpu)
 

@@ -63,96 +63,78 @@
 #include "RAJA/int_datatypes.hxx"
 #include "RAJA/fault_tolerance.hxx"
 #include "RAJA/segment_exec.hxx"
+#include "RAJA/ThreadUtils_CPU.hxx"
 
 #include "agency/agency.hpp"
+#include "agency/experimental.hpp"
 
+#include <iostream>
 #include <thread>
-#include <iterator>
-#include <algorithm>
 
 namespace RAJA
 {
+  /// ASSUMPTIONS:
+  ///   1- That we can get the number of threads this way
+  ///   2- That the number of workers can be sensibly computed this way
+  ///   3- That the number of workers computed this way works for 
+  ///      sequenctuial execution.
+  template <typename Func, typename Agent, typename Worker>
+  RAJA_INLINE void forall(const agency_base<Agent, Worker>&, 
+                          const RangeSegment& iter, 
+                          Func&& loop_body)
+  {
+    auto numThreads = getMaxReduceThreadsCPU();
+    auto tiles = agency::experimental::tile_evenly(
+        agency::experimental::interval(iter.getBegin(), iter.getEnd()), numThreads);
 
-namespace experimental
-{
+    agency::bulk_invoke(Worker{}(tiles.size()),
+                        [=](Agent& self) {
+                            for (Index_type i : tiles[self.index()]) {
+                                loop_body(i);
+                            }
+                        });
+  }
 
-/// ASSUMPTIONS:
-///   1- That we can get the number of threads this way
-///   2- That the number of workers can be sensibly computed this way
-///   3- That the number of workers computed this way works for 
-///      sequenctuial execution.
-template <typename Func, typename Agent, typename Worker>
-RAJA_INLINE void forall(const agency_base<Agent, Worker>&, 
-                        const RangeSegment& iter, 
-                        Func&& loop_body)
-{
-  auto numThreads = std::max(std::thread::hardware_concurrency(), 1u);
-  auto workPerThread = (std::end(iter) - std::begin(iter)) / numThreads;
+  template <typename Iterable, typename Func, typename Agent, typename Worker>
+  RAJA_INLINE void forall(const agency_base<Agent, Worker>&,
+                          Iterable&& iter,
+                          Func&& loop_body)
+  {
+    auto numThreads = getMaxReduceThreadsCPU();
+    auto distance = std::end(iter) - std::begin(iter);
 
-  agency::bulk_invoke(Worker{}(numThreads),
-                      [=](Agent& self) {
-                          auto start = workPerThread * self.index();
-                          auto end = self.index() == (numThreads - 1) 
-                                       ? iter.getEnd()
-                                       : start + workPerThread;
-                          for (auto i = start; i < end; ++i) {
-                            loop_body(i);  
-                          }
-                      });
-}
+    auto tiles = agency::experimental::tile_evenly(
+        agency::experimental::interval(0, distance), numThreads);
 
-template <typename Iterable, typename Func, typename Agent, typename Worker>
-RAJA_INLINE void forall(const agency_base<Agent, Worker>&,
-                        Iterable&& iter,
-                        Func&& loop_body)
-{
-  auto begin = std::begin(iter);
+    agency::bulk_invoke(Worker{}(tiles.size()),
+                        [=](Agent& self) {
+                            auto begin= std::begin(iter);
+                            for (Index_type i : tiles[self.index()]) {
+                                loop_body(begin[i]);
+                            }
+                        });
+  }
 
-  auto numThreads = std::max(std::thread::hardware_concurrency(), 1u);
-  auto workPerThread = (std::end(iter) - begin) / numThreads;
+  template <typename Iterable, typename Func, typename Agent, typename Worker>
+  RAJA_INLINE void forall_Icount(const agency_base<Agent, Worker>&,
+      Iterable&& iter,
+      Index_type icount,
+      Func&& loop_body)
+  {
+    auto distance = std::distance(std::begin(iter), std::end(iter));
+    auto numThreads = getMaxReduceThreadsCPU();
 
-  agency::bulk_invoke(Worker{}(numThreads),
-                      [=](Agent& self) {
-                          auto start = std::begin(iter);
-                          std::advance(start, workPerThread * self.index());
-                          decltype(std::end(iter)) end;
-                          if (self.index() == (numThreads - 1)) {
-                              end = std::end(iter);
-                          } else {
-                              end = start;
-                              std::advance(end, workPerThread);
-                          }
-                          for (auto i = start; i != end; ++i) {
-                            loop_body(*i);  
-                          }
-                      });
-}
+    auto tiles = agency::experimental::tile_evenly(
+        agency::experimental::interval(0, distance), numThreads);
 
-template <typename Iterable, typename Func, typename Agent, typename Worker>
-RAJA_INLINE void forall_Icount(const agency_base<Agent, Worker>&,
-                               Iterable&& iter,
-                               Index_type icount,
-                               Func&& loop_body)
-{
-  auto begin = std::begin(iter);
-  auto distance = std::distance(std::begin(iter), std::end(iter));
-
-  auto numThreads = std::max(std::thread::hardware_concurrency(), 1u);
-  auto workPerThread = distance / numThreads;
-
-  agency::bulk_invoke(Worker{}(numThreads),
-                      [=](Agent& self) {
-                          Index_type start = self.index() * workPerThread;
-                          Index_type finish = self.index() == (numThreads - 1)
-                                                ? distance
-                                                : start + workPerThread;
-                          for (Index_type i = start; i < finish; ++i) {
-                              loop_body(i + icount, begin[i]);
-                          }
-                      });
-}
-
-} // closing brace for experimental namespace
+    agency::bulk_invoke(Worker{}(tiles.size()),
+                        [=](Agent& self) {
+                            auto begin= std::begin(iter);
+                            for (Index_type i : tiles[self.index()]) {
+                                loop_body(i + icount, begin[i]);
+                            }
+                        });
+  }
 
 }  // closing brace for RAJA namespace
 

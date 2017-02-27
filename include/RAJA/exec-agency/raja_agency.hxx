@@ -72,7 +72,8 @@
 namespace RAJA
 {
 
-namespace experimental {
+
+
 
 //
 //////////////////////////////////////////////////////////////////////
@@ -121,9 +122,6 @@ using agency_cuda_exec = agency_base<
 struct agency_reduce {
 };
 
-
-} // closing brace for experimental namespace
-
 }  // closing brace for RAJA namespace
 
 #include "RAJA/exec-agency/forall_agency.hxx"
@@ -135,7 +133,6 @@ struct agency_reduce {
 #    include "RAJA/exec-agency/forallN_agency.hxx"
 #endif // defined RAJA_ENABLE_NESTED
 #endif
-
 #endif  // closing endif for if defined(RAJA_ENABLE_AGENCY)
 
 #endif  // closing endif for header file include guard
