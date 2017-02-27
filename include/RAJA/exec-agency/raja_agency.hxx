@@ -72,7 +72,6 @@
 namespace RAJA
 {
 
-namespace experimental {
 
 //
 //////////////////////////////////////////////////////////////////////
@@ -121,8 +120,6 @@ using agency_cuda_exec = agency_base<
 struct agency_reduce {
 };
 
-
-} // closing brace for experimental namespace
 
 }  // closing brace for RAJA namespace
 
