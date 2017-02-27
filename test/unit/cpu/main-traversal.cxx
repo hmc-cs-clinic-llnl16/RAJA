@@ -23,7 +23,6 @@
 #include "RAJA/internal/defines.hxx"
 
 using namespace RAJA;
-using namespace RAJA::experimental;
 using namespace std;
 
 #include "Compare.hxx"

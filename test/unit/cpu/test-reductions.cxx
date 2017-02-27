@@ -86,12 +86,21 @@ using constructor_types = ::testing::Types<
     std::tuple<RAJA::omp_reduce, double>,
     std::tuple<RAJA::omp_reduce_ordered, int>,
     std::tuple<RAJA::omp_reduce_ordered, float>,
-    std::tuple<RAJA::omp_reduce_ordered, double> >;
+    std::tuple<RAJA::omp_reduce_ordered, double>, 
+    //Fix for seperate place for agency tests
+    std::tuple<RAJA::agency_reduce, int>,
+    std::tuple<RAJA::agency_reduce, float>,
+    std::tuple<RAJA::agency_reduce, double> >;
+
 #else
 using constructor_types = ::testing::Types<
     std::tuple<RAJA::seq_reduce, int>,
     std::tuple<RAJA::seq_reduce, float>,
-    std::tuple<RAJA::seq_reduce, double> >;
+    std::tuple<RAJA::seq_reduce, double>,
+    //Fix for seperate place for agency tests
+    std::tuple<RAJA::agency_reduce, int>,
+    std::tuple<RAJA::agency_reduce, float>,
+    std::tuple<RAJA::agency_reduce, double> >;
 #endif
 
 INSTANTIATE_TYPED_TEST_CASE_P(ReduceBasicTests, ReductionConstructorTest, constructor_types);
@@ -103,7 +112,7 @@ class ReductionCorrectnessTest : public ::testing::Test
  protected:
    virtual void SetUp()
    {
-     array_length = 102;
+     array_length = 10200;
 
      array = RAJA::allocate_aligned_type<double>(RAJA::DATA_ALIGN,
                                                  array_length * sizeof(double));
@@ -251,12 +260,18 @@ using types = ::testing::Types<
     std::tuple<RAJA::seq_exec, RAJA::seq_reduce>,
     std::tuple<RAJA::simd_exec, RAJA::seq_reduce>,
     std::tuple<RAJA::omp_parallel_for_exec, RAJA::omp_reduce>,
-    std::tuple<RAJA::omp_parallel_for_exec, RAJA::omp_reduce_ordered>
+    std::tuple<RAJA::omp_parallel_for_exec, RAJA::omp_reduce_ordered>,
+    //add logic for including agency
+    std::tuple<RAJA::agency_sequential_exec, RAJA::agency_reduce>,
+    std::tuple<RAJA::agency_parallel_exec, RAJA::agency_reduce>
 >;
 #else
 using types = ::testing::Types<
     std::tuple<RAJA::seq_exec, RAJA::seq_reduce>,
-    std::tuple<RAJA::simd_exec, RAJA::seq_reduce>
+    std::tuple<RAJA::simd_exec, RAJA::seq_reduce>,
+    //add logic for including agency
+    std::tuple<RAJA::agency_sequential_exec, RAJA::agency_reduce>,
+    std::tuple<RAJA::agency_parallel_exec, RAJA::agency_reduce>
 >;
 #endif
 
@@ -337,16 +352,30 @@ using nested_types = ::testing::Types<
   std::tuple<RAJA::NestedPolicy<RAJA::ExecList<RAJA::omp_parallel_for_exec,
         RAJA::seq_exec,
         RAJA::seq_exec> >, RAJA::omp_reduce>, 
-std::tuple<RAJA::NestedPolicy<RAJA::ExecList<RAJA::omp_collapse_nowait_exec,
+  std::tuple<RAJA::NestedPolicy<RAJA::ExecList<RAJA::omp_collapse_nowait_exec,
         RAJA::omp_collapse_nowait_exec,
         RAJA::omp_collapse_nowait_exec>,
         RAJA::OMP_Parallel<> >, RAJA::omp_reduce_ordered>
+  //add agency stuff
+  // std::tuple<RAJA::NestedPolicy<RAJA::ExecList<RAJA::agency_parallel_exec
+  //       RAJA::agency_parallel_exec,
+  //       RAJA::agency_parallel_exec> >, RAJA::agency_reduce>, 
+  // std::tuple<RAJA::NestedPolicy<RAJA::ExecList<RAJA::agency_sequential_exec
+  //       RAJA::agency_sequential_exec,
+  //       RAJA::agency_sequential_exec> >, RAJA::agency_reduce>
 >;
 #else
 using nested_types = ::testing::Types<
   std::tuple<RAJA::NestedPolicy<RAJA::ExecList<RAJA::seq_exec,
         RAJA::seq_exec,
         RAJA::seq_exec> >, RAJA::seq_reduce>
+  //add agency stuff
+  // std::tuple<RAJA::NestedPolicy<RAJA::ExecList<RAJA::agency_parallel_exec
+  //       RAJA::agency_parallel_exec,
+  //       RAJA::agency_parallel_exec> >, RAJA::agency_reduce>, 
+  // std::tuple<RAJA::NestedPolicy<RAJA::ExecList<RAJA::agency_sequential_exec
+  //       RAJA::agency_sequential_exec,
+  //       RAJA::agency_sequential_exec> >, RAJA::agency_reduce>
 >;
 #endif
 
