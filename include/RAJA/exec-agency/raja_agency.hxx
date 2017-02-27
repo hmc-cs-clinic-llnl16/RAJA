@@ -62,17 +62,12 @@
 #include "agency/agency.hpp"
 
 #if defined(RAJA_ENABLE_OPENMP)
-#    include "agency/omp.hpp"
-#endif // defined (RAJA_ENABLE_OPENMP)
+#   include "agency/omp.hpp"
+#endif
 
-#if defined(RAJA_ENABLE_CUDA)
-#    include "agency/cuda.hpp"
-#endif // defined (RAJA_ENABLE_CUDA)
-
+// TODO: Add CUDA Agency include
 namespace RAJA
 {
-
-
 //
 //////////////////////////////////////////////////////////////////////
 //
@@ -80,58 +75,50 @@ namespace RAJA
 //
 //////////////////////////////////////////////////////////////////////
 //
-
-template <typename AGENT, typename WORKERS>
+template <typename AGENT, typename WORKER>
 struct agency_base { };
 
 using agency_parallel_exec = agency_base<
-    agency::parallel_agent, 
-    decltype(agency::par)
+  agency::parallel_agent, 
+  decltype(agency::par)
 >;
+
 using agency_sequential_exec = agency_base<
-    agency::sequenced_agent, 
-    decltype(agency::seq)
+  agency::sequenced_agent, 
+  decltype(agency::seq)
 >;
 
 #if defined(RAJA_ENABLE_OPENMP)
-
 using agency_omp_parallel_exec = agency_base<
-    agency::parallel_agent, 
-    decltype(agency::omp::par)
+  agency::parallel_agent, 
+  decltype(agency::omp::par)
 >;
+#endif
 
-#endif // closing endif for if defined(RAJA_ENABLE_OPENMP)
+// TODO: Add CUDA Agency policy
 
-#if defined(RAJA_ENABLE_CUDA)
+//
+//////////////////////////////////////////////////////////////////////
+//
+// Reduction policies
+//
+//////////////////////////////////////////////////////////////////////
+//
 
-using agency_cuda_exec = agency_base<
-    agency::parallel_agent, 
-    decltype(agency::cuda::par)
->;
-
-#endif // closing endif for if defined(RAJA_ENABLE_CUDA)
-///
-///////////////////////////////////////////////////////////////////////
-///
-/// Reduction execution policies
-///
-///////////////////////////////////////////////////////////////////////
-///
-struct agency_reduce {
-};
+struct agency_reduce { };
 
 
 }  // closing brace for RAJA namespace
 
 #include "RAJA/exec-agency/forall_agency.hxx"
-#include "RAJA/exec-agency/reduce_agency.hxx"
-//#include "RAJA/exec-agency/scan_agency.hxx"
 
-#if 0
-#if defined(RAJA_ENABLE_NESTED)
-#    include "RAJA/exec-agency/forallN_agency.hxx"
-#endif // defined RAJA_ENABLE_NESTED
-#endif
+// TODO: Implement reduce, scan, forallN
+#include "RAJA/exec-agency/reduce_agency.hxx"
+// #include "RAJA/exec-agency/scan_agency.hxx"
+// 
+// #if defined(RAJA_ENABLE_NESTED)
+// #include "RAJA/exec-agency/forallN_agency.hxx"
+// #endif
 
 #endif  // closing endif for if defined(RAJA_ENABLE_AGENCY)
 

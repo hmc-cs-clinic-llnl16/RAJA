@@ -1,6 +1,7 @@
 *.pyc
 *.o
 *.exe
+
 build/
 extra/
 *.swp

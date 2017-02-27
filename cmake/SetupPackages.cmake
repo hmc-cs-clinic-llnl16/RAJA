@@ -68,7 +68,7 @@ if(RAJA_ENABLE_AGENCY)
     endif()
   endif()
   include_directories(${AGENCY_INCLUDE_DIR})
-endif()  
+endif()
 
 
 if (RAJA_ENABLE_CUDA)
