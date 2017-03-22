@@ -93,12 +93,32 @@ using agency_sequential_exec = agency_base<
   decltype(agency::seq)
 >;
 
+template <typename AGENT, typename WORKER>
+struct agency_taskgraph_base { };
+
+using agency_taskgraph_sequential_segit = agency_taskgraph_base<
+  agency::sequenced_agent,
+  decltype(agency::seq)
+>;
+
+using agency_taskgraph_parallel_segit = agency_taskgraph_base<
+  agency::parallel_agent,
+  decltype(agency::par)
+>;
+
 #if defined(RAJA_ENABLE_OPENMP)
 using agency_omp_parallel_exec = agency_base<
   agency::parallel_agent, 
   decltype(agency::omp::par)
 >;
+
+using agency_taskgraph_omp_segit = agency_taskgraph_base<
+  agency::parallel_agent,
+  decltype(agency::omp::par)
+>;
 #endif
+
+
 
 // TODO: Add CUDA Agency policy
 
