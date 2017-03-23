@@ -88,7 +88,7 @@ namespace RAJA
         agency::experimental::interval(iter.getBegin(), iter.getEnd()), numThreads);
 
     agency::bulk_invoke(Worker{}(tiles.size()),
-                        [=](Agent& self) {
+                        [&](Agent& self) {
                             for (Index_type i : tiles[self.index()]) {
                                 loop_body(i);
                             }
@@ -107,7 +107,7 @@ namespace RAJA
         agency::experimental::interval(0, distance), numThreads);
 
     agency::bulk_invoke(Worker{}(tiles.size()),
-                        [=](Agent& self) {
+                        [&](Agent& self) {
                             auto begin= std::begin(iter);
                             for (Index_type i : tiles[self.index()]) {
                                 loop_body(begin[i]);
@@ -128,7 +128,7 @@ namespace RAJA
         agency::experimental::interval(0, distance), numThreads);
 
     agency::bulk_invoke(Worker{}(tiles.size()),
-                        [=](Agent& self) {
+                        [&](Agent& self) {
                             auto begin= std::begin(iter);
                             for (Index_type i : tiles[self.index()]) {
                                 loop_body(i + icount, begin[i]);
