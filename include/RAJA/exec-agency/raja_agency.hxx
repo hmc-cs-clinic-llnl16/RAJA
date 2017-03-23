@@ -60,15 +60,18 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 #include "agency/agency.hpp"
+#include "agency/experimental.hpp"
 
 #if defined(RAJA_ENABLE_OPENMP)
 #   include "agency/omp.hpp"
 #endif
 
-// TODO: Add CUDA Agency include
+#if defined(RAJA_ENABLE_CUDA)
+#   include "agency/cuda.hpp"
+#endif
+
 namespace RAJA
 {
-
 //
 //////////////////////////////////////////////////////////////////////
 //
@@ -93,13 +96,49 @@ using agency_sequential_exec = agency_base<
   decltype(agency::seq)
 >;
 
+#if defined(RAJA_ENABLE_OPENMP)
+using agency_omp_parallel_exec = agency_base<
+  agency::parallel_agent, 
+  decltype(agency::omp::par)
+>;
+#endif
+
+#if defined(RAJA_ENABLE_CUDA)
+// Wrapper functor because we can't template on the overloaded function grid
+struct AgencyCudaGrid {
+  auto operator()(size_t num_blocks, size_t num_threads) ->
+      decltype(agency::cuda::grid(num_blocks, num_threads))
+  {
+     return agency::cuda::grid(num_blocks, num_threads); 
+  }
+};
+
+template <typename AGENT, typename WORKER, size_t BLOCK_SIZE, bool Async>
+struct agency_cuda_base {
+    using Agent_t = AGENT;
+    using Worker_t = WORKER;
+    static const size_t blockSize = BLOCK_SIZE;
+    static const bool async = Async;
+};
+
+template <size_t BLOCK_SIZE, bool Async = false>
+using agency_cuda_exec = agency_cuda_base<
+  agency::cuda::grid_agent,
+  AgencyCudaGrid,
+  BLOCK_SIZE,
+  Async
+>;
+#endif
+
+//
+//////////////////////////////////////////////////////////////////////
+//
+// Taskgraph policies
+//
+//////////////////////////////////////////////////////////////////////
+//
 template <typename AGENT, typename WORKER>
 struct agency_taskgraph_base { };
-
-using agency_taskgraph_sequential_segit = agency_taskgraph_base<
-  agency::sequenced_agent,
-  decltype(agency::seq)
->;
 
 using agency_taskgraph_parallel_segit = agency_taskgraph_base<
   agency::parallel_agent,
@@ -107,20 +146,11 @@ using agency_taskgraph_parallel_segit = agency_taskgraph_base<
 >;
 
 #if defined(RAJA_ENABLE_OPENMP)
-using agency_omp_parallel_exec = agency_base<
-  agency::parallel_agent, 
-  decltype(agency::omp::par)
->;
-
 using agency_taskgraph_omp_segit = agency_taskgraph_base<
   agency::parallel_agent,
   decltype(agency::omp::par)
 >;
 #endif
-
-
-
-// TODO: Add CUDA Agency policy
 
 //
 //////////////////////////////////////////////////////////////////////
@@ -140,7 +170,11 @@ struct agency_reduce { };
 // #include "RAJA/exec-agency/scan_agency.hxx"
  
 #if defined(RAJA_ENABLE_NESTED)
-#include "RAJA/exec-agency/forallN_agency.hxx"
+#    include "RAJA/exec-agency/forallN_agency.hxx"
+#endif
+
+#if defined(RAJA_ENABLE_CUDA)
+#    include "RAJA/exec-agency/forall_cuda_agency.hxx"
 #endif
 
 #endif  // closing endif for if defined(RAJA_ENABLE_AGENCY)

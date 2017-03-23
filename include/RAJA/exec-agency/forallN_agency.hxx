@@ -119,7 +119,7 @@ struct ForallN_Executor<ForallN_PolicyPair<agency_base<Agent, Worker>,
         agency::experimental::interval(begin_i, end_i), numThreads);
 
     agency::bulk_invoke(Worker{}(tiles.size()),
-                        [=](Agent& self) {
+                        [&](Agent& self) {
                             for (Index_type i : tiles[self.index]) {
                                 for (Index_type j = begin_j; j < end_j; ++j) {
                                     outer(i, j);
@@ -170,7 +170,7 @@ struct ForallN_Executor<ForallN_PolicyPair<agency_base<Agent, Worker>,
         agency::experimental::interval(begin_i, end_i), numThreads);
 
     agency::bulk_invoke(Worker{}(tiles.size()),
-                        [=](Agent& self) {
+                        [&](Agent& self) {
                             for (Index_type i : tiles[self.index]) {
                                 for (Index_type j = begin_j; j < end_j; ++j) {
                                     for (Index_type k = begin_k; k < end_k; ++k) {
@@ -197,17 +197,9 @@ RAJA_INLINE void forallN_policy(ForallN_Agency_Parallel_Tag<Agent, Worker>,
   using NextPolicy = typename POLICY::NextPolicy;
   using NextPolicyTag = typename POLICY::NextPolicy::PolicyTag;
 
-  // It works if we leave it like this, but not if the part below
-  // is commented out.
-  // This feels weird...
+  // We don't have any setup work to do in this layer, so just pass
+  // it down to the next one
   forallN_policy<NextPolicy>(NextPolicyTag(), body, pargs...);
-
- //  auto numThreads = getMaxReduceThreadsCPU();
-
- //  agency::bulk_invoke(Worker{}(numThreads),
- //                      [=](Agent&) {
- //                          forallN_policy<NextPolicy>(NextPolicyTag(), body, pargs...);
- //                      });
 }
 
 }  // namespace RAJA

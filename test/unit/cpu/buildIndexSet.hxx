@@ -13,7 +13,10 @@
 // for testing...
 //
 
-#include "RAJA/RAJA.hxx"
+#ifndef RAJA_test_unit_cpu_buildIndexSet_HXX
+#define RAJA_test_unit_cpu_buildIndexSet_HXX
+
+//#include "RAJA/RAJA.hxx"
 
 //
 // Enum for different hybrid initialization procedures.
@@ -38,3 +41,4 @@ enum IndexSetBuildMethod {
 //
 RAJA::Index_type buildIndexSet(RAJA::IndexSet* hindex,
                                IndexSetBuildMethod use_vector);
+#endif // endif header guard

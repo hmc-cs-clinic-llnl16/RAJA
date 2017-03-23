@@ -29,7 +29,7 @@ using namespace std;
 
 #include "Compare.hxx"
 
-#include "buildIndexSet.hxx"
+#include "buildIndexSet.cxx"
 
 //
 // Global variables for counting tests executed/passed.
