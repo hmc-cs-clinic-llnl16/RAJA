@@ -49,12 +49,9 @@ if (RAJA_ENABLE_AGENCY)
   include_directories(SYSTEM "${PROJECT_SOURCE_DIR}/extra/agency")
 endif()
 
-#raja_add_library(NAME bis SOURCES buildIndexSet.cxx)
-
 raja_add_test(
   NAME CPUreduce-test
   SOURCES main-reduce.cxx)
-  #DEPENDS_ON bis)
 
 if(RAJA_ENABLE_OPENMP)
   raja_add_test(
@@ -66,7 +63,6 @@ raja_add_test(
   NAME indexset-tests
   SOURCES test-indexsets.cxx 
   DEPENDS_ON gtest gtest_main ${CMAKE_THREAD_LIBS_INIT})
-  #DEPENDS_ON bis gtest gtest_main ${CMAKE_THREAD_LIBS_INIT})
 
 if (NOT MSVC)
   raja_add_test(
@@ -83,7 +79,6 @@ if (NOT MSVC)
     NAME forall-tests
     SOURCES test-forall.cxx 
     DEPENDS_ON gtest gtest_main ${CMAKE_THREAD_LIBS_INIT})
-   # DEPENDS_ON bis gtest gtest_main ${CMAKE_THREAD_LIBS_INIT}) 
 
   raja_add_test(
     NAME forallN-tests

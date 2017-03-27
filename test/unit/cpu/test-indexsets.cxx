@@ -2,7 +2,7 @@
 
 #include "RAJA/RAJA.hxx"
 
-#include "buildIndexSet.cxx"
+#include "buildIndexSet.hxx"
 
 #include <set>
 

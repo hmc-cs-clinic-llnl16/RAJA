@@ -82,9 +82,4 @@ if (NOT RAJA_ENABLE_CLANG_CUDA)
     NAME scan
     SOURCES test-scan.cxx
     DEPENDS_ON gtest gtest_main ${CMAKE_THREAD_LIBS_INIT})
-
-#   raja_add_test(
-#     NAME traversal-test
-#     SOURCES test-traversal.cxx 
-#     DEPENDS_ON gtest gtest_main ${CMAKE_THREAD_LIBS_INIT})
 endif ()

@@ -19,7 +19,7 @@ using namespace RAJA;
 using namespace std;
 
 #include "Compare.hxx"
-#include "buildIndexSet.cxx"
+#include "buildIndexSet.hxx"
 
 template <typename ISET_POLICY_T>
 class ForallTest : public ::testing::Test
