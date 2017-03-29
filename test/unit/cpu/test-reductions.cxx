@@ -330,7 +330,7 @@ TYPED_TEST_P(NestedReductionCorrectnessTest, NestedReduceSum)
       RAJA::RangeSegment(0, this->y_size), 
       RAJA::RangeSegment(0, this->z_size), 
       [=] (int i, int j, int k) {
-        sum_reducer += view(i, j, k);
+        sum_reducer += view(i, j, k);//sum_reducer += view(i, j, k);
   });
 
   double raja_sum = (double) sum_reducer.get();
