@@ -88,7 +88,7 @@ namespace RAJA
         agency::experimental::interval(iter.getBegin(), iter.getEnd()), numThreads);
 
     agency::bulk_invoke(Worker{}(tiles.size()),
-                        [=](Agent& self) {
+                        [&](Agent& self) {
                             for (Index_type i : tiles[self.index()]) {
                                 loop_body(i);
                             }
@@ -107,7 +107,7 @@ namespace RAJA
         agency::experimental::interval(0, distance), numThreads);
 
     agency::bulk_invoke(Worker{}(tiles.size()),
-                        [=](Agent& self) {
+                        [&](Agent& self) {
                             auto begin= std::begin(iter);
                             for (Index_type i : tiles[self.index()]) {
                                 loop_body(begin[i]);
@@ -128,13 +128,58 @@ namespace RAJA
         agency::experimental::interval(0, distance), numThreads);
 
     agency::bulk_invoke(Worker{}(tiles.size()),
-                        [=](Agent& self) {
+                        [&](Agent& self) {
                             auto begin= std::begin(iter);
                             for (Index_type i : tiles[self.index()]) {
                                 loop_body(i + icount, begin[i]);
                             }
                         });
   }
+
+template <typename SEG_EXEC_POLICY, typename LOOP_BODY, typename Worker>
+RAJA_INLINE void forall(
+    IndexSet::ExecPolicy<agency_taskgraph_base<agency::parallel_agent, Worker>, SEG_EXEC_POLICY>,
+    const IndexSet& iset,
+    LOOP_BODY loop_body)
+{
+  if (!iset.dependencyGraphSet()) {
+    std::cerr << "\n RAJA IndexSet dependency graph not set "
+              << "FILE: " << __FILE__ << " line: " << __LINE__ << std::endl;
+    exit(1);
+  }
+
+  // Cast away const because we want it in the other overloaded versions,
+  // but need to modify the index sets due to how dependent nodes are
+  // implemented.
+  IndexSet* ncis = const_cast<IndexSet*>(&iset);
+  int numSegments = ncis->getNumSegments();
+  
+  agency::bulk_invoke(Worker{}(numSegments) , [=] (agency::parallel_agent& self) {
+    int isi = self.index();
+    IndexSetSegInfo* segInfo = const_cast<IndexSetSegInfo*>(ncis->getSegmentInfo(isi));
+    DepGraphNode* task = const_cast<DepGraphNode*>(segInfo->getDepGraphNode());
+    task->wait();
+
+    executeRangeList_forall<SEG_EXEC_POLICY>(segInfo, loop_body);
+
+    task->reset();
+
+    
+
+    if (task->numDepTasks() != 0) {
+      for (int ii = 0; ii < task->numDepTasks(); ++ii) {
+        // Alternateively, we could get the return value of this call
+        // and actively launch the task if we are the last depedent
+        // task. In that case, we would not need the semaphore spin
+        // loop above.
+        int seg = task->depTaskNum(ii);
+        DepGraphNode* dep = const_cast<DepGraphNode*>(ncis->getSegmentInfo(seg)->getDepGraphNode());
+        dep->satisfyOne();
+      }
+    }
+  });
+}
+
 
 }  // closing brace for RAJA namespace
 
