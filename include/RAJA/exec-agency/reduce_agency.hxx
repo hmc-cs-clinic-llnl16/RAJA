@@ -59,7 +59,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-#include <unordered_map>
 
 #include "RAJA/int_datatypes.hxx"
 
@@ -71,7 +70,6 @@
 
 #include "agency/agency.hpp"
 
-#include <iostream>
 
 namespace RAJA
 {
@@ -102,13 +100,9 @@ public:
 
     m_blockdata = getCPUReductionMemBlock(m_myID);
 
-    //Creating a mapping of thread ids to integer numbers
-    threadMap = std::make_shared<std::unordered_map<std::thread::id, int>>();
-
-    //Create mutex
-    mtx = std::make_shared<std::mutex>();
-
-    m_init_val = init_val;
+    for(int i = 0; i < agency::detail::system_thread_pool().size()-1; ++i){
+      m_blockdata[ i * s_block_offset] = init_val;
+    }
   }
 
   //
@@ -121,15 +115,6 @@ public:
     *this = other;
     m_is_copy = true;
     
-    mtx->lock();
-    auto search =  threadMap->find(std::this_thread::get_id());
-
-    if (search == threadMap->end()){
-      (*threadMap)[std::this_thread::get_id()] = (threadMap)->size()-1;
-      //Initilize the value for this thread
-      m_blockdata[ (*threadMap)[std::this_thread::get_id()] * s_block_offset] = m_init_val;
-    } 
-    mtx->unlock();
   }
 
   //
@@ -148,7 +133,7 @@ public:
   //
   operator T()
   {
-    for (int i = 0; i < threadMap->size(); ++i) {
+    for (size_t i = 0; i < agency::detail::system_thread_pool().size(); ++i) {
       m_reduced_val = RAJA_MIN(m_reduced_val,
                                static_cast<T>(m_blockdata[i * s_block_offset]));
     }
@@ -166,9 +151,7 @@ public:
   //
   ReduceMin<agency_reduce, T> min(T val) const
   {
-    mtx->lock();
-    int tid = (*threadMap)[std::this_thread::get_id()];
-    mtx->unlock();
+    int tid = agency::detail::system_thread_pool().get_thread_num();
 
     int idx = tid * s_block_offset;
     m_blockdata[idx] = RAJA_MIN(static_cast<T>(m_blockdata[idx]), val);
@@ -187,14 +170,8 @@ private:
 
   bool m_is_copy;
   int m_myID;
-
-  std::shared_ptr<std::mutex> mtx; 
-
-  std::shared_ptr<std::unordered_map<std::thread::id, int> > threadMap;
-
+  
   T m_reduced_val;
-
-  T m_init_val;
 
   CPUReductionBlockDataType* m_blockdata;
 };
@@ -226,13 +203,11 @@ public:
     m_blockdata = getCPUReductionMemBlock(m_myID);
     m_idxdata = getCPUReductionLocBlock(m_myID);
 
-    m_init_val = init_val;
-    m_init_loc = init_loc;
 
-
-    //Creating a mapping of thread ids to integer numbers
-    threadMap = std::make_shared<std::unordered_map<std::thread::id, int>>();
-    mtx = std::make_shared<std::mutex>();
+    for(int i = 0; i < agency::detail::system_thread_pool().size()-1; ++i){
+      m_blockdata[ i * s_block_offset] = init_val;
+      m_idxdata[i * s_idx_offset] = init_loc;
+    }
 
   }
 
@@ -243,17 +218,6 @@ public:
   {
     *this = other;
     m_is_copy = true;
-
-    //add the ID to the thread map if it is not already added
-    mtx->lock();
-    auto search =  threadMap->find(std::this_thread::get_id());
-    if (search == (threadMap)->end()){
-      (*threadMap)[std::this_thread::get_id()] = (threadMap)->size()-1;
-      m_blockdata[(*threadMap)[std::this_thread::get_id()] * s_block_offset] = m_init_val;
-      m_idxdata[(*threadMap)[std::this_thread::get_id()] * s_idx_offset] = m_init_loc;
-
-    } 
-    mtx->unlock();
 
   }
 
@@ -273,11 +237,8 @@ public:
   //
   operator T()
   {
-    if (threadMap->size() == 0){
-      return m_init_val;
-    }
 
-    for (int i = 0; i < threadMap->size(); ++i) {
+    for (size_t i = 0; i < agency::detail::system_thread_pool().size(); ++i) {
       if (static_cast<T>(m_blockdata[i * s_block_offset]) <= m_reduced_val) {
         m_reduced_val = m_blockdata[i * s_block_offset];
         m_reduced_idx = m_idxdata[i * s_idx_offset];
@@ -297,11 +258,8 @@ public:
   //
   Index_type getLoc()
   {
-    if (threadMap->size() == 0){
-      return m_init_loc;
-    }
 
-    for (int i = 0; i < threadMap->size(); ++i) {
+    for (size_t i = 0; i < agency::detail::system_thread_pool().size(); ++i) {
       if (static_cast<T>(m_blockdata[i * s_block_offset]) <= m_reduced_val) {
         m_reduced_val = m_blockdata[i * s_block_offset];
         m_reduced_idx = m_idxdata[i * s_idx_offset];
@@ -316,9 +274,7 @@ public:
   //
   ReduceMinLoc<agency_reduce, T> minloc(T val, Index_type idx) const
   {
-    mtx->lock();
-    int tid = (*threadMap)[std::this_thread::get_id()];
-    mtx->unlock();
+    int tid = agency::detail::system_thread_pool().get_thread_num();
 
     if (val <= static_cast<T>(m_blockdata[tid * s_block_offset])) {
       m_blockdata[tid * s_block_offset] = val;
@@ -340,13 +296,6 @@ private:
 
   bool m_is_copy;
   int m_myID;
-
-  T m_init_val;
-  Index_type m_init_loc;
-
-  std::shared_ptr<std::mutex> mtx; 
-
-  std::shared_ptr<std::unordered_map<std::thread::id, int> > threadMap;
 
   T m_reduced_val;
   Index_type m_reduced_idx;
@@ -381,13 +330,11 @@ public:
 
     m_blockdata = getCPUReductionMemBlock(m_myID);
 
-    m_init_val = init_val;
+    for(int i = 0; i < agency::detail::system_thread_pool().size()-1; ++i){
+      m_blockdata[ i * s_block_offset] = init_val;
+    }
 
-    //Creating a mapping of thread ids to integer numbers
-    threadMap = std::make_shared<std::unordered_map<std::thread::id, int>>();
-
-    //create mutex
-    mtx = std::make_shared<std::mutex>();
+    
 
 
   }
@@ -400,15 +347,7 @@ public:
     *this = other;
     m_is_copy = true;
 
-    //add the ID to the thread map if it is not already added
-    mtx->lock();
-    auto search =  threadMap->find(std::this_thread::get_id());
-    if (search == threadMap->end()){
-      (*threadMap)[std::this_thread::get_id()] = (threadMap)->size() -1;
-      m_blockdata[(*threadMap)[std::this_thread::get_id()] * s_block_offset] = m_init_val;
 
-    } 
-    mtx->unlock();
 
   }
 
@@ -428,7 +367,7 @@ public:
   //
   operator T()
   {
-    for (int i = 0; i < threadMap->size(); ++i) {
+    for (size_t i = 0; i < agency::detail::system_thread_pool().size(); ++i) {
       m_reduced_val = RAJA_MAX(m_reduced_val,
                                static_cast<T>(m_blockdata[i * s_block_offset]));
     }
@@ -446,9 +385,7 @@ public:
   //
   ReduceMax<agency_reduce, T> max(T val) const
   {
-    mtx->lock();
-    int tid = (*threadMap)[std::this_thread::get_id()];
-    mtx->unlock();
+    int tid = agency::detail::system_thread_pool().get_thread_num();
 
     int idx = tid * s_block_offset;
     m_blockdata[idx] = RAJA_MAX(static_cast<T>(m_blockdata[idx]), val);
@@ -467,12 +404,6 @@ private:
 
   bool m_is_copy;
   int m_myID;
-
-  T m_init_val;
-
-  std::shared_ptr<std::mutex> mtx; 
-
-  std::shared_ptr<std::unordered_map<std::thread::id, int> > threadMap;
 
   T m_reduced_val;
 
@@ -506,19 +437,10 @@ public:
     m_blockdata = getCPUReductionMemBlock(m_myID);
     m_idxdata = getCPUReductionLocBlock(m_myID);
 
-    m_init_val = init_val;
-    m_init_loc = init_loc;
-
-    //Creating a mapping of thread ids to integer numbers
-    threadMap = std::make_shared<std::unordered_map<std::thread::id, int>>();
-
-    //create mutex
-    mtx = std::make_shared<std::mutex>();
-
-    //add this thread to the map
-    mtx->lock();
-    (*threadMap)[std::this_thread::get_id()] = 0;
-    mtx->unlock();
+    for(int i = 0; i < agency::detail::system_thread_pool().size()-1; ++i){
+      m_blockdata[ i * s_block_offset] = init_val;
+      m_idxdata[i* s_idx_offset] = init_loc;
+    }
 
   }
 
@@ -529,17 +451,6 @@ public:
   {
     *this = other;
     m_is_copy = true;
-
-    //add the ID to the thread map if it is not already added
-    mtx->lock();
-    auto search =  threadMap->find(std::this_thread::get_id());
-    if (search == (threadMap)->end()){
-      (*threadMap)[std::this_thread::get_id()] = (threadMap)->size()-1;
-      m_blockdata[(*threadMap)[std::this_thread::get_id()] * s_block_offset] = m_init_val;
-      m_idxdata[(*threadMap)[std::this_thread::get_id()] * s_idx_offset] = m_init_loc;
-
-    } 
-    mtx->unlock();
 
   }
 
@@ -559,10 +470,7 @@ public:
   //
   operator T()
   {
-    if (threadMap->size()==0){
-      return m_init_val;
-    }
-    for (int i = 0; i < threadMap->size(); ++i) {
+    for (size_t i = 0; i < agency::detail::system_thread_pool().size(); ++i) {
       if (static_cast<T>(m_blockdata[i * s_block_offset]) >= m_reduced_val) {
         m_reduced_val = m_blockdata[i * s_block_offset];
         m_reduced_idx = m_idxdata[i * s_idx_offset];
@@ -582,11 +490,8 @@ public:
   //
   Index_type getLoc()
   {
-    if (threadMap->size()==0){
-      return m_init_loc;
-    }
 
-    for (int i = 0; i < threadMap->size(); ++i) {
+    for (size_t i = 0; i < agency::detail::system_thread_pool().size(); ++i) {
       if (static_cast<T>(m_blockdata[i * s_block_offset]) >= m_reduced_val) {
         m_reduced_val = m_blockdata[i * s_block_offset];
         m_reduced_idx = m_idxdata[i * s_idx_offset];
@@ -601,9 +506,7 @@ public:
   //
   ReduceMaxLoc<agency_reduce, T> maxloc(T val, Index_type idx) const
   {
-    mtx->lock();
-    int tid = (*threadMap)[std::this_thread::get_id()];
-    mtx->unlock();
+    int tid = agency::detail::system_thread_pool().get_thread_num();
 
     if (val >= static_cast<T>(m_blockdata[tid * s_block_offset])) {
       m_blockdata[tid * s_block_offset] = val;
@@ -625,13 +528,6 @@ private:
 
   bool m_is_copy;
   int m_myID;
-
-  T m_init_val;
-  Index_type m_init_loc;
-
-  std::shared_ptr<std::mutex> mtx; 
-
-  std::shared_ptr<std::unordered_map<std::thread::id, int> > threadMap;
 
   T m_reduced_val;
   Index_type m_reduced_idx;
@@ -668,12 +564,9 @@ public:
     m_blockdata = getCPUReductionMemBlock(m_myID);
 
 
-    //Creating a mapping of thread ids to integer numbers
-    threadMap = std::make_shared<std::unordered_map<std::thread::id, int>>();
-
-    //create mutex
-    mtx = std::make_shared<std::mutex>();
-    m_blockdata[0] = m_init_val;
+    for(int i = 0; i < agency::detail::system_thread_pool().size(); ++i){
+      m_blockdata[ i * s_block_offset] = init_val;
+    }
 
 
 
@@ -686,15 +579,6 @@ public:
   {
     *this = other;
     m_is_copy = true;
-
-    //add the ID to the thread map if it is not already added
-    mtx->lock();
-    auto search =  threadMap->find(std::this_thread::get_id());
-    if (search == (threadMap)->end()){
-      (*threadMap)[std::this_thread::get_id()] = (threadMap)->size()-1;
-      m_blockdata[(*threadMap)[std::this_thread::get_id()]* s_block_offset] = m_init_val;
-    } 
-    mtx->unlock();
 
   }
 
@@ -715,7 +599,7 @@ public:
   operator T()
   {
     T tmp_reduced_val = static_cast<T>(0);
-    for (int i = 0; i < threadMap->size(); ++i) {
+    for (size_t i = 0; i < agency::detail::system_thread_pool().size(); ++i) {
       tmp_reduced_val += static_cast<T>(m_blockdata[i * s_block_offset]);
     }
     m_reduced_val = m_init_val + tmp_reduced_val;
@@ -734,14 +618,8 @@ public:
   ReduceSum<agency_reduce, T> operator+=(T val) const
   {
 
-    mtx->lock();
-    if (threadMap->find(std::this_thread::get_id()) == (threadMap)->end()){
-      (*threadMap)[std::this_thread::get_id()] = (threadMap)->size()-1;
-      m_blockdata[(*threadMap)[std::this_thread::get_id()]* s_block_offset] = m_init_val;
-    }
-    int tid = (*threadMap)[std::this_thread::get_id()];
-   
-   mtx->unlock(); 
+    int tid = agency::detail::system_thread_pool().get_thread_num();
+    //std::cout << tid << std::endl;
 
     m_blockdata[tid * s_block_offset] += val;
     return *this;
@@ -759,9 +637,6 @@ private:
   bool m_is_copy;
   int m_myID;
 
-  std::shared_ptr<std::mutex> mtx; 
-
-  std::shared_ptr<std::unordered_map<std::thread::id, int> > threadMap;
 
   T m_init_val;
   T m_reduced_val;
