@@ -76,7 +76,10 @@ namespace RAJA
 //////////////////////////////////////////////////////////////////////
 //
 template <typename AGENT, typename WORKER>
-struct agency_base { };
+struct agency_base { 
+    using Agent_t = AGENT;
+    using Worker_t = WORKER;
+};
 
 using agency_parallel_exec = agency_base<
   agency::parallel_agent, 
@@ -88,12 +91,32 @@ using agency_sequential_exec = agency_base<
   decltype(agency::seq)
 >;
 
+template <typename AGENT, typename WORKER>
+struct agency_taskgraph_base { };
+
+using agency_taskgraph_sequential_segit = agency_taskgraph_base<
+  agency::sequenced_agent,
+  decltype(agency::seq)
+>;
+
+using agency_taskgraph_parallel_segit = agency_taskgraph_base<
+  agency::parallel_agent,
+  decltype(agency::par)
+>;
+
 #if defined(RAJA_ENABLE_OPENMP)
 using agency_omp_parallel_exec = agency_base<
   agency::parallel_agent, 
   decltype(agency::omp::par)
 >;
+
+using agency_taskgraph_omp_segit = agency_taskgraph_base<
+  agency::parallel_agent,
+  decltype(agency::omp::par)
+>;
 #endif
+
+
 
 // TODO: Add CUDA Agency policy
 
@@ -114,11 +137,12 @@ struct agency_reduce { };
 
 // TODO: Implement reduce, scan, forallN
 #include "RAJA/exec-agency/reduce_agency.hxx"
+
 // #include "RAJA/exec-agency/scan_agency.hxx"
-// 
-// #if defined(RAJA_ENABLE_NESTED)
-// #include "RAJA/exec-agency/forallN_agency.hxx"
-// #endif
+ 
+#if defined(RAJA_ENABLE_NESTED)
+#include "RAJA/exec-agency/forallN_agency.hxx"
+#endif
 
 #endif  // closing endif for if defined(RAJA_ENABLE_AGENCY)
 
