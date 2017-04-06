@@ -64,20 +64,13 @@
 #include "RAJA/fault_tolerance.hxx"
 #include "RAJA/segment_exec.hxx"
 #include "RAJA/ThreadUtils_CPU.hxx"
-
-#include "agency/agency.hpp"
-#include "agency/experimental.hpp"
+#include "RAJA/internal/defines.hxx"
 
 #include <iostream>
 #include <thread>
 
 namespace RAJA
 {
-  /// ASSUMPTIONS:
-  ///   1- That we can get the number of threads this way
-  ///   2- That the number of workers can be sensibly computed this way
-  ///   3- That the number of workers computed this way works for 
-  ///      sequenctuial execution.
   template <typename Func, typename Agent, typename Worker>
   RAJA_INLINE void forall(const agency_base<Agent, Worker>&, 
                           const RangeSegment& iter, 
@@ -96,7 +89,7 @@ namespace RAJA
   }
 
   template <typename Iterable, typename Func, typename Agent, typename Worker>
-  RAJA_INLINE void forall(const agency_base<Agent, Worker>&,
+  RAJA_INLINE void forall(const agency_base<Agent, Worker>&, 
                           Iterable&& iter,
                           Func&& loop_body)
   {
@@ -108,7 +101,7 @@ namespace RAJA
 
     agency::bulk_invoke(Worker{}(tiles.size()),
                         [&](Agent& self) {
-                            auto begin= std::begin(iter);
+                            auto begin = std::begin(iter);
                             for (Index_type i : tiles[self.index()]) {
                                 loop_body(begin[i]);
                             }
@@ -129,7 +122,7 @@ namespace RAJA
 
     agency::bulk_invoke(Worker{}(tiles.size()),
                         [&](Agent& self) {
-                            auto begin= std::begin(iter);
+                            auto begin = std::begin(iter);
                             for (Index_type i : tiles[self.index()]) {
                                 loop_body(i + icount, begin[i]);
                             }
@@ -179,7 +172,6 @@ RAJA_INLINE void forall(
     }
   });
 }
-
 
 }  // closing brace for RAJA namespace
 
