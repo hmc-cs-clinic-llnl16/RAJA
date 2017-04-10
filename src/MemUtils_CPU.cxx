@@ -176,6 +176,11 @@ void releaseCPUReductionId(int id)
 CPUReductionBlockDataType* getCPUReductionMemBlock(int id)
 {
   int nthreads = getMaxReduceThreadsCPU();
+  
+  #if defined(RAJA_ENABLE_AGENCY)
+    //add one to include work done on the main thread
+    ++nthreads;
+  #endif
 
   int block_offset = COHERENCE_BLOCK_SIZE / sizeof(CPUReductionBlockDataType);
 
@@ -216,6 +221,11 @@ void freeCPUReductionMemBlock()
 Index_type* getCPUReductionLocBlock(int id)
 {
   int nthreads = getMaxReduceThreadsCPU();
+  
+  #if defined(RAJA_ENABLE_AGENCY)
+    //add one to include work done on the main thread
+    ++nthreads;
+  #endif
 
   int block_offset = COHERENCE_BLOCK_SIZE / sizeof(Index_type);
 

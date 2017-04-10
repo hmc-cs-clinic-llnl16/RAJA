@@ -70,6 +70,8 @@
 
 #include "agency/agency.hpp"
 
+#include <iostream>
+
 
 namespace RAJA
 {
@@ -100,7 +102,7 @@ public:
 
     m_blockdata = getCPUReductionMemBlock(m_myID);
 
-    for(int i = 0; i < agency::detail::system_thread_pool().size()-1; ++i){
+    for(size_t i = 0; i < agency::detail::system_thread_pool().size()+1; ++i){
       m_blockdata[ i * s_block_offset] = init_val;
     }
   }
@@ -133,7 +135,7 @@ public:
   //
   operator T()
   {
-    for (size_t i = 0; i < agency::detail::system_thread_pool().size(); ++i) {
+    for (size_t i = 0; i < agency::detail::system_thread_pool().size()+1; ++i) {
       m_reduced_val = RAJA_MIN(m_reduced_val,
                                static_cast<T>(m_blockdata[i * s_block_offset]));
     }
@@ -204,7 +206,7 @@ public:
     m_idxdata = getCPUReductionLocBlock(m_myID);
 
 
-    for(int i = 0; i < agency::detail::system_thread_pool().size()-1; ++i){
+    for(size_t i = 0; i < agency::detail::system_thread_pool().size()+1; ++i){
       m_blockdata[ i * s_block_offset] = init_val;
       m_idxdata[i * s_idx_offset] = init_loc;
     }
@@ -238,7 +240,7 @@ public:
   operator T()
   {
 
-    for (size_t i = 0; i < agency::detail::system_thread_pool().size(); ++i) {
+    for (size_t i = 0; i < agency::detail::system_thread_pool().size()+1; ++i) {
       if (static_cast<T>(m_blockdata[i * s_block_offset]) <= m_reduced_val) {
         m_reduced_val = m_blockdata[i * s_block_offset];
         m_reduced_idx = m_idxdata[i * s_idx_offset];
@@ -259,7 +261,7 @@ public:
   Index_type getLoc()
   {
 
-    for (size_t i = 0; i < agency::detail::system_thread_pool().size(); ++i) {
+    for (size_t i = 0; i < agency::detail::system_thread_pool().size()+1; ++i) {
       if (static_cast<T>(m_blockdata[i * s_block_offset]) <= m_reduced_val) {
         m_reduced_val = m_blockdata[i * s_block_offset];
         m_reduced_idx = m_idxdata[i * s_idx_offset];
@@ -330,7 +332,7 @@ public:
 
     m_blockdata = getCPUReductionMemBlock(m_myID);
 
-    for(int i = 0; i < agency::detail::system_thread_pool().size()-1; ++i){
+    for(size_t i = 0; i < agency::detail::system_thread_pool().size()+1; ++i){
       m_blockdata[ i * s_block_offset] = init_val;
     }
 
@@ -367,7 +369,7 @@ public:
   //
   operator T()
   {
-    for (size_t i = 0; i < agency::detail::system_thread_pool().size(); ++i) {
+    for (size_t i = 0; i < agency::detail::system_thread_pool().size()+1; ++i) {
       m_reduced_val = RAJA_MAX(m_reduced_val,
                                static_cast<T>(m_blockdata[i * s_block_offset]));
     }
@@ -437,7 +439,7 @@ public:
     m_blockdata = getCPUReductionMemBlock(m_myID);
     m_idxdata = getCPUReductionLocBlock(m_myID);
 
-    for(int i = 0; i < agency::detail::system_thread_pool().size()-1; ++i){
+    for(int i = 0; i < agency::detail::system_thread_pool().size()+1; ++i){
       m_blockdata[ i * s_block_offset] = init_val;
       m_idxdata[i* s_idx_offset] = init_loc;
     }
@@ -470,7 +472,7 @@ public:
   //
   operator T()
   {
-    for (size_t i = 0; i < agency::detail::system_thread_pool().size(); ++i) {
+    for (size_t i = 0; i < agency::detail::system_thread_pool().size()+1; ++i) {
       if (static_cast<T>(m_blockdata[i * s_block_offset]) >= m_reduced_val) {
         m_reduced_val = m_blockdata[i * s_block_offset];
         m_reduced_idx = m_idxdata[i * s_idx_offset];
@@ -491,7 +493,7 @@ public:
   Index_type getLoc()
   {
 
-    for (size_t i = 0; i < agency::detail::system_thread_pool().size(); ++i) {
+    for (size_t i = 0; i < agency::detail::system_thread_pool().size()+1; ++i) {
       if (static_cast<T>(m_blockdata[i * s_block_offset]) >= m_reduced_val) {
         m_reduced_val = m_blockdata[i * s_block_offset];
         m_reduced_idx = m_idxdata[i * s_idx_offset];
@@ -564,7 +566,7 @@ public:
     m_blockdata = getCPUReductionMemBlock(m_myID);
 
 
-    for(int i = 0; i < agency::detail::system_thread_pool().size(); ++i){
+    for(size_t i = 0; i < agency::detail::system_thread_pool().size()+1; ++i){
       m_blockdata[ i * s_block_offset] = init_val;
     }
 
@@ -599,7 +601,7 @@ public:
   operator T()
   {
     T tmp_reduced_val = static_cast<T>(0);
-    for (size_t i = 0; i < agency::detail::system_thread_pool().size(); ++i) {
+    for (size_t i = 0; i < agency::detail::system_thread_pool().size()+1; ++i) {
       tmp_reduced_val += static_cast<T>(m_blockdata[i * s_block_offset]);
     }
     m_reduced_val = m_init_val + tmp_reduced_val;
@@ -619,7 +621,6 @@ public:
   {
 
     int tid = agency::detail::system_thread_pool().get_thread_num();
-    //std::cout << tid << std::endl;
 
     m_blockdata[tid * s_block_offset] += val;
     return *this;
