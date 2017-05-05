@@ -9,7 +9,7 @@
 # 
 # This file is part of RAJA. 
 # 
-# For additional details, please also read raja/README-license.txt.
+# For additional details, please also read RAJA/LICENSE.
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -39,44 +39,30 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+if(RAJA_ENABLE_AGENCY)
+  set(AGENCY_DIR "${PROJECT_SOURCE_DIR}/extra/agency")
+  include_directories(${AGENCY_DIR})
+endif()  
 
-if (RAJA_ENABLE_CUDA)
-  cuda_add_library(RAJA
-      AlignedRangeIndexSetBuilders.cxx
-      DepGraphNode.cxx
-      IndexSet.cxx
-      ListSegment.cxx
-      LockFreeIndexSetBuilders.cxx
-      MemUtils_CPU.cxx
-      MemUtils_CUDA.cxx
-      RangeSegment.cxx
-      ThreadUtils_CPU.cxx
-    )
-else()
-  add_library(RAJA
-      AlignedRangeIndexSetBuilders.cxx
-      DepGraphNode.cxx
-      IndexSet.cxx
-      ListSegment.cxx
-      LockFreeIndexSetBuilders.cxx
-      MemUtils_CPU.cxx
-      MemUtils_CUDA.cxx
-      RangeSegment.cxx
-      ThreadUtils_CPU.cxx
-    )
-endif()
+set (raja_sources 
+  AlignedRangeIndexSetBuilders.cxx
+  DepGraphNode.cxx
+  IndexSet.cxx
+  ListSegment.cxx
+  LockFreeIndexSetBuilders.cxx
+  MemUtils_CPU.cxx
+  MemUtils_CUDA.cxx
+  RangeSegment.cxx
+  ThreadUtils_CPU.cxx)
 
-if (NOT CMAKE_CXX_COMPILER_ID MATCHES Intel)
-  set_target_properties(RAJA
-    PROPERTIES
-    CXX_STANDARD 11
-    CXX_STANDARD_REQUIRED YES
-  )
-endif()
+raja_add_library(
+  NAME RAJA
+  SOURCES ${raja_sources})
 
 install(TARGETS RAJA EXPORT RAJA
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib
 )
 
-install(EXPORT RAJA DESTINATION share/cmake/raja)
+install(EXPORT RAJA DESTINATION share/raja/cmake/)

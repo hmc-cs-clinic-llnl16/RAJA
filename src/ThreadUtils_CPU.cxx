@@ -20,7 +20,7 @@
 //
 // This file is part of RAJA.
 //
-// For additional details, please also read raja/README-license.txt.
+// For additional details, please also read RAJA/LICENSE.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -63,8 +63,10 @@
 #endif
 
 #include <algorithm>
+#include <thread>
 
-namespace RAJA {
+namespace RAJA
+{
 
 /*
 *************************************************************************
@@ -75,17 +77,20 @@ namespace RAJA {
 */
 int getMaxReduceThreadsCPU()
 {
-   int nthreads = 1;
+  int nthreads = 1;
 
 #if defined(_OPENMP)
-   nthreads = omp_get_max_threads();
+  nthreads = omp_get_max_threads();
 #endif
 #if defined(RAJA_ENABLE_CILK)
-   int nworkers = __cilkrts_get_nworkers();
-   nthreads = std::max(nthreads, nworkers);
+  int nworkers = __cilkrts_get_nworkers();
+  nthreads = std::max(nthreads, nworkers);
+#endif
+#if defined(RAJA_ENABLE_AGENCY)
+  nthreads = std::max(nthreads, static_cast<int>(std::thread::hardware_concurrency()));
 #endif
 
-   return nthreads;
+  return nthreads;
 }
 
 /*
@@ -97,14 +102,13 @@ int getMaxReduceThreadsCPU()
 */
 int getMaxOMPThreadsCPU()
 {
-   int nthreads = 1;
+  int nthreads = 1;
 
 #if defined(_OPENMP)
-   nthreads = omp_get_max_threads();
+  nthreads = omp_get_max_threads();
 #endif
 
-   return nthreads;
+  return nthreads;
 }
-
 
 }  // closing brace for RAJA namespace

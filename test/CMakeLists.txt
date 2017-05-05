@@ -10,7 +10,7 @@
 #
 # This file is part of RAJA.
 #
-# For additional details, please also read raja/README-license.txt.
+# For additional details, please also read RAJA/LICENSE.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -41,10 +41,11 @@
 #
 ###############################################################################
 
+if(RAJA_ENABLE_AGENCY)
+  set(AGENCY_DIR "${PROJECT_SOURCE_DIR}/extra/agency")
+  include_directories(${AGENCY_DIR})
+endif()  
+
 include_directories(include)
 
-#add_subdirectory(CoMD)
-add_subdirectory(LULESH-v1.0)
-add_subdirectory(LULESH-v2.0)
-add_subdirectory(Kripke-v1.1)
-add_subdirectory(unit-tests)
+add_subdirectory(unit)

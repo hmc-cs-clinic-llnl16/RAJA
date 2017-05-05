@@ -24,7 +24,7 @@
 //
 // This file is part of RAJA.
 //
-// For additional details, please also read raja/README-license.txt.
+// For additional details, please also read RAJA/LICENSE.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -55,7 +55,10 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-namespace RAJA {
+#include "RAJA/PolicyBase.hxx"
+
+namespace RAJA
+{
 
 //
 //////////////////////////////////////////////////////////////////////
@@ -68,12 +71,14 @@ namespace RAJA {
 ///
 /// Segment execution policies
 ///
-struct seq_exec {};
+struct seq_exec : public PolicyBase {
+};
 
 ///
 /// Index set segment iteration policies
 ///
-struct seq_segit {};
+struct seq_segit : public seq_exec {
+};
 
 ///
 ///////////////////////////////////////////////////////////////////////
@@ -82,13 +87,13 @@ struct seq_segit {};
 ///
 ///////////////////////////////////////////////////////////////////////
 ///
-struct seq_reduce {};
+struct seq_reduce {
+};
 
 }  // closing brace for RAJA namespace
 
-
-#include "RAJA/exec-sequential/reduce_sequential.hxx"
 #include "RAJA/exec-sequential/forall_sequential.hxx"
+#include "RAJA/exec-sequential/reduce_sequential.hxx"
+#include "RAJA/exec-sequential/scan_sequential.hxx"
 
 #endif  // closing endif for header file include guard
-

@@ -24,7 +24,7 @@
 //
 // This file is part of RAJA.
 //
-// For additional details, please also read raja/README-license.txt.
+// For additional details, please also read RAJA/LICENSE.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -63,20 +63,19 @@
 //////////////////////////////////////////////////////////////////////
 //
 
-
 ///
 /// Segment execution policies
 ///
-namespace RAJA {
+namespace RAJA
+{
 
-struct simd_exec {};
-
+struct simd_exec {
+};
 }
 
 //
 // NOTE: There is no Index set segment iteration policy for SIMD
 //
-
 
 ///
 ///////////////////////////////////////////////////////////////////////
@@ -93,4 +92,3 @@ struct simd_exec {};
 #include "RAJA/exec-simd/forall_simd.hxx"
 
 #endif  // closing endif for header file include guard
-
