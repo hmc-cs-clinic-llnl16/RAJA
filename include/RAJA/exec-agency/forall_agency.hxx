@@ -64,6 +64,9 @@
 #include "RAJA/fault_tolerance.hxx"
 #include "RAJA/segment_exec.hxx"
 #include "RAJA/ThreadUtils_CPU.hxx"
+
+#include "agency/agency.hpp"
+#include "agency/experimental.hpp"
 #include "RAJA/internal/defines.hxx"
 
 #include <iostream>

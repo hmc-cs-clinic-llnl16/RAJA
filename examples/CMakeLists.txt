@@ -48,3 +48,8 @@ endif()
 raja_add_executable(
   NAME raja-pi 
   SOURCES pi.cxx)
+
+if(RAJA_ENABLE_AGENCY)
+  set(AGENCY_DIR "${PROJECT_SOURCE_DIR}/extra/agency")
+  include_directories(SYSTEM ${AGENCY_DIR})
+endif()  

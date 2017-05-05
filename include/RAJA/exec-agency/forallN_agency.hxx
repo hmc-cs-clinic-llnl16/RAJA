@@ -12,6 +12,7 @@
 #define RAJA_forallN_agency_HXX__
 
 #include "RAJA/config.hxx"
+#include <thread>
 
 #if defined(RAJA_ENABLE_AGENCY)
 
@@ -83,7 +84,7 @@ struct Agency_Parallel {
  *  ForallN policies
  ******************************************************************/
 
-template <typename Agent, typename  Worker, typename... PREST>
+template <typename Agent, typename Worker, typename... PREST>
 struct ForallN_Executor<ForallN_PolicyPair<agency_base<Agent, Worker>,
                                            RangeSegment>,
                         ForallN_PolicyPair<agency_base<Agent, Worker>,

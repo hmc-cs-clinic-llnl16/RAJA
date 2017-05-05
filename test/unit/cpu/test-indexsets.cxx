@@ -6,6 +6,8 @@
 
 #include <set>
 
+#include <set>
+
 class IndexSetTest : public ::testing::Test
 {
 protected:

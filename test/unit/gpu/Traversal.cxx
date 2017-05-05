@@ -424,6 +424,31 @@ int main(int argc, char *argv[])
   runAllSimpleForallTests<block_size>(test_array, ref_array, array_length, parent);
   runAllMultiSegmentForallTests<block_size>(test_array, ref_array, array_length, parent, iset, is_indices);
 
+#if defined(RAJA_ENABLE_AGENCY) && 0
+  cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
+  forall<IndexSet::ExecPolicy<seq_segit, agency_cuda_exec>>(
+      iset, [=] __device__ (Index_type idx) {
+          test_array[idx] = parent[idx] * parent[idx];
+      });
+
+  s_ntests_run++;
+  if (!array_equal(ref_array, test_array, array_length)) {
+    cout << "\n TEST FAILURE " << endl;
+#if 0
+      cout << endl << endl;
+      for (Index_type i = 0; i < is_indices.size(); ++i) {
+         cout << "test_array[" << is_indices[i] << "] = "
+                   << test_array[ is_indices[i] ]
+                   << " ( " << ref_array[ is_indices[i] ] << " ) " << endl;
+      }
+      cout << endl;
+#endif
+  } else {
+    s_ntests_passed++;
+  }
+
+#endif
+
   cout << "\n END RAJA::forall tests..." << endl;
 
   ///////////////////////////////////////////////////////////////////////////
@@ -436,6 +461,29 @@ int main(int argc, char *argv[])
 
   runAllSimpleForallIcountTests<block_size>(test_array, ref_array, array_length, parent);
   runAllMultiSegmentForallIcountTests<block_size>(test_array, ref_array, parent, array_length, is_indices, iset);
+
+#if defined(RAJA_ENABLE_AGENCY) && 0
+  cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
+  forall_Icount<IndexSet::ExecPolicy<seq_segit, agency_cuda_exec>>(
+      iset, [=] __device__ (Index_type icount, Index_type idx) {
+        test_array[icount] = parent[idx] * parent[idx];
+      });
+
+  s_ntests_run++;
+  if (!array_equal(ref_array, test_array, array_length)) {
+    cout << "\n TEST FAILURE " << endl;
+    cout << endl << endl;
+    for (Index_type i = 0; i < is_indices.size(); ++i) {
+      cout << "test_array[" << is_indices[i]
+           << "] = " << test_array[is_indices[i]] << " ( "
+           << ref_array[is_indices[i]] << " ) " << endl;
+    }
+    cout << endl;
+  } else {
+    s_ntests_passed++;
+  }
+
+#endif
 
   cout << "\n END RAJA::forall_Icount tests..." << endl;
 

@@ -189,6 +189,17 @@ void runMinReduceTests(Real_ptr in_array,
                                         is_indices);
 #endif
 
+#ifdef RAJA_ENABLE_AGENCY
+  runBasicMinReductionTest<IndexSet::ExecPolicy<seq_segit, agency_parallel_exec>,
+                           agency_reduce>(
+      "ExecPolicy<seq_segit, agency_parallel_exec>", in_array, alen, iset, is_indices);
+
+  runBasicMinReductionTest<IndexSet::ExecPolicy<seq_segit, agency_sequential_exec>,
+                           agency_reduce>(
+      "ExecPolicy<seq_segit, agency_sequential_exec>", in_array, alen, iset, is_indices);
+
+#endif
+
   cout << "\n tests passed / test run: " << s_ntests_passed << " / "
        << s_ntests_run << endl;
 

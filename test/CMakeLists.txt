@@ -41,6 +41,11 @@
 #
 ###############################################################################
 
+if(RAJA_ENABLE_AGENCY)
+  set(AGENCY_DIR "${PROJECT_SOURCE_DIR}/extra/agency")
+  include_directories(${AGENCY_DIR})
+endif()  
+
 include_directories(include)
 
 add_subdirectory(unit)
