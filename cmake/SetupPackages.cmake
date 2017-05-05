@@ -57,6 +57,7 @@ if (RAJA_ENABLE_CLANG_CUDA)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif ()
 
+
 if(RAJA_ENABLE_AGENCY)
   find_package(agency)
   if(NOT AGENCY_FOUND)

@@ -108,26 +108,18 @@ struct ForallN_Executor<ForallN_PolicyPair<agency_base<Agent, Worker>,
   template <typename BODY>
   RAJA_INLINE void operator()(BODY body) const
   {
-    int begin_i = iset_i.getBegin();
     int begin_j = iset_j.getBegin();
-    int end_i = iset_i.getEnd();
     int end_j = iset_j.getEnd();
 
     ForallN_PeelOuter<NextExec, BODY> outer(next_exec, body);
 
-    auto numThreads = getMaxReduceThreadsCPU();
-    auto tiles = agency::experimental::tile_evenly(
-        agency::experimental::interval(begin_i, end_i), numThreads);
-
-    agency::bulk_invoke(Worker{}(tiles.size()),
-                        [=](Agent& self) {
-                            for (Index_type i : tiles[self.index]) {
-                                for (Index_type j = begin_j; j < end_j; ++j) {
-                                    outer(i, j);
-                                }
-                            }
-                        });
-    }
+    forall<agency_base<Agent, Worker>>(iset_i,
+        [&](Index_type i) {
+            for (Index_type j = begin_j; j < end_j; ++j) {
+                outer(i, j);
+            }
+        });
+  }
 };
 
 template <typename Agent, typename  Worker, typename... PREST>
@@ -157,36 +149,27 @@ struct ForallN_Executor<ForallN_PolicyPair<agency_base<Agent, Worker>,
   template <typename BODY>
   RAJA_INLINE void operator()(BODY body) const
   {
-    int begin_i = iset_i.getBegin();
     int begin_j = iset_j.getBegin();
     int begin_k = iset_k.getBegin();
-    int end_i = iset_i.getEnd();
     int end_j = iset_j.getEnd();
     int end_k = iset_k.getEnd();
 
     ForallN_PeelOuter<NextExec, BODY> outer(next_exec, body);
 
-    auto numThreads = getMaxReduceThreadsCPU();
-    auto tiles = agency::experimental::tile_evenly(
-        agency::experimental::interval(begin_i, end_i), numThreads);
-
-    agency::bulk_invoke(Worker{}(tiles.size()),
-                        [=](Agent& self) {
-                            for (Index_type i : tiles[self.index]) {
-                                for (Index_type j = begin_j; j < end_j; ++j) {
-                                    for (Index_type k = begin_k; k < end_k; ++k) {
-                                        outer(i, j, k);
-                                    }
-                                }
-                            }
-                        });
-    }
+    forall<agency_base<Agent, Worker>>(iset_i,
+        [&](Index_type i) {
+            for (Index_type j = begin_j; j < end_j; ++j) {
+                for (Index_type k = begin_k; k < end_k; ++k) {
+                    outer(i, j, k);
+                }
+            }
+        });
+  }
 };
 
 /******************************************************************
  *  forallN_policy()
  ******************************************************************/
-
 
 /*!
  * \brief Tiling policy front-end function.
@@ -199,17 +182,9 @@ RAJA_INLINE void forallN_policy(ForallN_Agency_Parallel_Tag<Agent, Worker>,
   using NextPolicy = typename POLICY::NextPolicy;
   using NextPolicyTag = typename POLICY::NextPolicy::PolicyTag;
 
-  // It works if we leave it like this, but not if the part below
-  // is commented out.
-  // This feels weird...
+  // We don't have any setup work to do in this layer, so just pass
+  // it down to the next one
   forallN_policy<NextPolicy>(NextPolicyTag(), body, pargs...);
-
- //  auto numThreads = getMaxReduceThreadsCPU();
-
- //  agency::bulk_invoke(Worker{}(numThreads),
- //                      [=](Agent&) {
- //                          forallN_policy<NextPolicy>(NextPolicyTag(), body, pargs...);
- //                      });
 }
 
 }  // namespace RAJA

@@ -1,8 +1,10 @@
 #include "gtest/gtest.h"
 
+#include "RAJA/RAJA.hxx"
+
 #include "buildIndexSet.hxx"
 
-#include "RAJA/RAJA.hxx"
+#include <set>
 
 #include <set>
 

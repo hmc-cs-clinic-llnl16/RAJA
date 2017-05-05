@@ -439,7 +439,7 @@ public:
     m_blockdata = getCPUReductionMemBlock(m_myID);
     m_idxdata = getCPUReductionLocBlock(m_myID);
 
-    for(int i = 0; i < agency::detail::system_thread_pool().size()+1; ++i){
+    for(unsigned i = 0; i < agency::detail::system_thread_pool().size()+1; ++i){
       m_blockdata[ i * s_block_offset] = init_val;
       m_idxdata[i* s_idx_offset] = init_loc;
     }

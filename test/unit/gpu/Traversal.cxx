@@ -28,6 +28,229 @@ using namespace std;
 unsigned s_ntests_run = 0;
 unsigned s_ntests_passed = 0;
 
+template <typename Policy>
+void runSimpleForallTest(Real_ptr test_array,
+                         Real_ptr ref_array,
+                         Index_type array_length,
+                         Real_ptr parent) {
+    Index_type  maxSize[2] = { 0, array_length };
+
+    for (Index_type maxS : maxSize) {
+        cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
+        cudaMemset(ref_array, 0, sizeof(Real_type) * array_length);
+
+        for (Index_type i = 0; i < maxS; ++i) {
+            ref_array[i] = parent[i] * parent[i];
+        }
+
+        forall<Policy>(0, maxS, 
+                       [=] __device__ (Index_type idx) {
+                           test_array[idx] = parent[idx] * parent[idx];
+                       });    
+
+        s_ntests_run++;
+        if (!array_equal(ref_array, test_array, maxS)) {
+            cout << "\n TEST FAILURE " << endl;
+#if 0
+            cout << endl << endl;
+            for (Index_type i = 0; i < is_indices.size(); ++i) {
+               cout << "test_array[" << is_indices[i] << "] = "
+                         << test_array[ is_indices[i] ]
+                         << " ( " << ref_array[ is_indices[i] ] << " ) " << endl;
+            }
+            cout << endl;
+#endif
+        } else {
+            s_ntests_passed++;
+        }
+    }
+}                   
+
+template <size_t block_size>
+void runAllSimpleForallTests(Real_ptr test_array,
+                             Real_ptr ref_array,
+                             Index_type array_length,
+                             Real_ptr parent) {
+    runSimpleForallTest<cuda_exec<block_size>>(test_array,
+                                               ref_array,
+                                               array_length,
+                                               parent);
+#if defined(RAJA_ENABLE_AGENCY)
+    runSimpleForallTest<agency_cuda_exec<block_size>>(test_array,
+                                          ref_array,
+                                          array_length,
+                                          parent);
+#endif
+}                             
+
+template <typename Policy>
+void runMultiSegmentForallTest(Real_ptr test_array,
+                               Real_ptr ref_array,
+                               Index_type array_length,
+                               Real_ptr parent,
+                               IndexSet& iset,
+                               RAJAVec<Index_type>& is_indices) {
+    // Reset reference and results arrays
+    cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
+    cudaMemset(ref_array, 0, sizeof(Real_type) * array_length);
+
+    for (Index_type i = 0; i < is_indices.size(); ++i) {
+      ref_array[is_indices[i]] = parent[is_indices[i]] * parent[is_indices[i]];
+    }
+
+    forall<Policy>(iset, 
+                   [=] __device__(Index_type idx) {
+                       test_array[idx] = parent[idx] * parent[idx];
+                   });
+
+    s_ntests_run++;
+    if (!array_equal(ref_array, test_array, array_length)) {
+      cout << "\n TEST FAILURE " << endl;
+#if 0
+        cout << endl << endl;
+        for (Index_type i = 0; i < is_indices.size(); ++i) {
+           cout << "test_array[" << is_indices[i] << "] = "
+                     << test_array[ is_indices[i] ]
+                     << " ( " << ref_array[ is_indices[i] ] << " ) " << endl;
+        }
+        cout << endl;
+#endif
+    } else {
+      s_ntests_passed++;
+    }
+}
+
+template <size_t block_size>
+void runAllMultiSegmentForallTests(Real_ptr test_array,
+                                   Real_ptr ref_array,
+                                   Index_type array_length,
+                                   Real_ptr parent,
+                                   IndexSet& iset,
+                                   RAJAVec<Index_type>& is_indices) {
+
+    runMultiSegmentForallTest<IndexSet::ExecPolicy<seq_segit, cuda_exec<block_size>>>(
+        test_array,
+        ref_array,
+        array_length,
+        parent,
+        iset,
+        is_indices);
+#if defined(RAJA_ENABLE_AGENCY)
+    runMultiSegmentForallTest<IndexSet::ExecPolicy<seq_segit, agency_cuda_exec<block_size>>>(
+        test_array,
+        ref_array,
+        array_length,
+        parent,
+        iset,
+        is_indices);
+#endif
+}
+
+template <typename Policy>
+void runSimpleForallIcountTest(Real_ptr test_array,
+                               Real_ptr ref_array,
+                               Index_type array_length,
+                               Real_ptr parent) {
+    cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
+    cudaMemset(ref_array, 0, sizeof(Real_type) * array_length);
+
+    for (Index_type i = 0; i < array_length; ++i) {
+      ref_array[i] = parent[i] * parent[i];
+    }
+
+    forall_Icount<Policy >(
+        0, array_length, 0, [=] __device__(Index_type icount, Index_type idx) {
+          test_array[icount] = parent[idx] * parent[idx];
+        });
+
+    s_ntests_run++;
+    if (!array_equal(ref_array, test_array, array_length)) {
+      cout << "\n TEST FAILURE " << endl;
+#if 0      
+      cout << endl << endl;
+      for (Index_type i = 0; i < is_indices.size(); ++i) {
+        cout << "test_array[" << is_indices[i]
+             << "] = " << test_array[is_indices[i]] << " ( "
+             << ref_array[is_indices[i]] << " ) " << endl;
+      }
+      cout << endl;
+#endif      
+    } else {
+      s_ntests_passed++;
+    }
+}
+
+template <size_t block_size>
+void runAllSimpleForallIcountTests(Real_ptr test_array,
+                                   Real_ptr ref_array,
+                                   Index_type array_length,
+                                   Real_ptr parent) {
+
+    runSimpleForallIcountTest<cuda_exec<block_size>>(test_array, ref_array, array_length, parent);
+
+#if defined(RAJA_ENABLE_AGENCY)
+    runSimpleForallIcountTest<agency_cuda_exec<block_size>>(test_array, ref_array, array_length, parent);
+#endif
+}                                   
+
+template <typename Policy>
+void runMultiSegmentForallIcountTest(Real_ptr test_array,
+                                     Real_ptr ref_array,
+                                     Real_ptr parent,
+                                     Index_type array_length,
+                                     RAJAVec<Index_type>& is_indices,
+                                     IndexSet& iset) {
+    // Reset reference and results arrays
+    cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
+    cudaMemset(ref_array, 0, sizeof(Real_type) * array_length);
+
+    //
+    // Generate reference result to check correctness.
+    // Note: Reference does not use RAJA!!!
+    //
+    Index_type test_alen = is_indices.size();
+    for (Index_type i = 0; i < test_alen; ++i) {
+      ref_array[i] = parent[is_indices[i]] * parent[is_indices[i]];
+    }
+
+    forall_Icount<Policy>(
+        iset, [=] __device__(Index_type icount, Index_type idx) {
+          test_array[icount] = parent[idx] * parent[idx];
+        });
+
+    s_ntests_run++;
+    if (!array_equal(ref_array, test_array, test_alen)) {
+      cout << "\n TEST FAILURE " << endl;
+#if 0
+      cout << endl << endl;
+      for (Index_type i = 0; i < test_alen; ++i) {
+        cout << "test_array[" << is_indices[i]
+             << "] = " << test_array[is_indices[i]] << " ( "
+             << ref_array[is_indices[i]] << " ) " << endl;
+      }
+      cout << endl;
+#endif
+    } else {
+      s_ntests_passed++;
+    }
+}
+
+template <size_t block_size>
+void runAllMultiSegmentForallIcountTests(Real_ptr test_array,
+                                         Real_ptr ref_array,
+                                         Real_ptr parent,
+                                         Index_type array_length,
+                                         RAJAVec<Index_type>& is_indices,
+                                         IndexSet& iset) {
+    runMultiSegmentForallIcountTest<IndexSet::ExecPolicy<seq_segit, cuda_exec<block_size>>>(
+        test_array, ref_array, parent, array_length, is_indices, iset);
+
+#if defined(RAJA_ENABLE_AGENCY)
+    runMultiSegmentForallIcountTest<IndexSet::ExecPolicy<seq_segit, agency_cuda_exec<block_size>>>(
+        test_array, ref_array, parent, array_length, is_indices, iset);
+#endif
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -198,166 +421,8 @@ int main(int argc, char *argv[])
 
   cout << "\n\n BEGIN RAJA::forall tests..." << endl;
 
-  ///
-  /// Run 0 length range traversal test for sanity check
-  ///
-
-  // Reset reference and results arrays
-  cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
-  cudaMemset(ref_array, 0, sizeof(Real_type) * array_length);
-
-  //
-  // Generate reference result to check correctness.
-  // Note: Reference does not use RAJA!!!
-  //
-  for (Index_type i = 0; i < 0; ++i) {
-    ref_array[i] = parent[i] * parent[i];
-  }
-
-  forall<cuda_exec<block_size> >(0,
-                                 0,
-                                 [=] __device__(Index_type idx) {
-                                   test_array[idx] = parent[idx] * parent[idx];
-                                 });
-
-  s_ntests_run++;
-  if (!array_equal(ref_array, test_array, 0)) {
-    cout << "\n TEST FAILURE " << endl;
-#if 0
-      cout << endl << endl;
-      for (Index_type i = 0; i < is_indices.size(); ++i) {
-         cout << "test_array[" << is_indices[i] << "] = "
-                   << test_array[ is_indices[i] ]
-                   << " ( " << ref_array[ is_indices[i] ] << " ) " << endl;
-      }
-      cout << endl;
-#endif
-  } else {
-    s_ntests_passed++;
-  }
-
-#if defined(RAJA_ENABLE_AGENCY) && 0
-  cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
-  forall<agency_cuda_exec>(0, 0, [=] __device__ (Index_type idx) {
-      test_array[idx] = parent[idx] * parent[idx];
-  });
-
-  s_ntests_run++;
-  if (!array_equal(ref_array, test_array, 0)) {
-    cout << "\n TEST FAILURE " << endl;
-#if 0
-      cout << endl << endl;
-      for (Index_type i = 0; i < is_indices.size(); ++i) {
-         cout << "test_array[" << is_indices[i] << "] = "
-                   << test_array[ is_indices[i] ]
-                   << " ( " << ref_array[ is_indices[i] ] << " ) " << endl;
-      }
-      cout << endl;
-#endif
-  } else {
-    s_ntests_passed++;
-  }
-
-#endif
-
-  ///
-  /// Run range traversal test in its simplest form for sanity check
-  ///
-
-  // Reset reference and results arrays
-  cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
-  cudaMemset(ref_array, 0, sizeof(Real_type) * array_length);
-
-  //
-  // Generate reference result to check correctness.
-  // Note: Reference does not use RAJA!!!
-  //
-  for (Index_type i = 0; i < array_length; ++i) {
-    ref_array[i] = parent[i] * parent[i];
-  }
-
-  forall<cuda_exec<block_size> >(0,
-                                 array_length,
-                                 [=] __device__(Index_type idx) {
-                                   test_array[idx] = parent[idx] * parent[idx];
-                                 });
-
-  s_ntests_run++;
-  if (!array_equal(ref_array, test_array, array_length)) {
-    cout << "\n TEST FAILURE " << endl;
-#if 0
-      cout << endl << endl;
-      for (Index_type i = 0; i < is_indices.size(); ++i) {
-         cout << "test_array[" << is_indices[i] << "] = "
-                   << test_array[ is_indices[i] ]
-                   << " ( " << ref_array[ is_indices[i] ] << " ) " << endl;
-      }
-      cout << endl;
-#endif
-  } else {
-    s_ntests_passed++;
-  }
-
-#if defined(RAJA_ENABLE_AGENCY) && 0
-  cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
-  forall<agency_cuda_exec>(0, array_length, [=] __device__ (Index_type idx) {
-      test_array[idx] = parent[idx] * parent[idx];
-  });
-
-  s_ntests_run++;
-  if (!array_equal(ref_array, test_array, array_length)) {
-    cout << "\n TEST FAILURE " << endl;
-#if 0
-      cout << endl << endl;
-      for (Index_type i = 0; i < is_indices.size(); ++i) {
-         cout << "test_array[" << is_indices[i] << "] = "
-                   << test_array[ is_indices[i] ]
-                   << " ( " << ref_array[ is_indices[i] ] << " ) " << endl;
-      }
-      cout << endl;
-#endif
-  } else {
-    s_ntests_passed++;
-  }
-
-#endif
-
-  ///
-  /// Run traversal test with IndexSet containing multiple segments.
-  ///
-
-  // Reset reference and results arrays
-  cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
-  cudaMemset(ref_array, 0, sizeof(Real_type) * array_length);
-
-  //
-  // Generate reference result to check correctness.
-  // Note: Reference does not use RAJA!!!
-  //
-  for (Index_type i = 0; i < is_indices.size(); ++i) {
-    ref_array[is_indices[i]] = parent[is_indices[i]] * parent[is_indices[i]];
-  }
-
-  forall<IndexSet::ExecPolicy<seq_segit, cuda_exec<block_size> > >(
-      iset, [=] __device__(Index_type idx) {
-        test_array[idx] = parent[idx] * parent[idx];
-      });
-
-  s_ntests_run++;
-  if (!array_equal(ref_array, test_array, array_length)) {
-    cout << "\n TEST FAILURE " << endl;
-#if 0
-      cout << endl << endl;
-      for (Index_type i = 0; i < is_indices.size(); ++i) {
-         cout << "test_array[" << is_indices[i] << "] = "
-                   << test_array[ is_indices[i] ]
-                   << " ( " << ref_array[ is_indices[i] ] << " ) " << endl;
-      }
-      cout << endl;
-#endif
-  } else {
-    s_ntests_passed++;
-  }
+  runAllSimpleForallTests<block_size>(test_array, ref_array, array_length, parent);
+  runAllMultiSegmentForallTests<block_size>(test_array, ref_array, array_length, parent, iset, is_indices);
 
 #if defined(RAJA_ENABLE_AGENCY) && 0
   cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
@@ -394,98 +459,8 @@ int main(int argc, char *argv[])
 
   cout << "\n\n BEGIN RAJA::forall_Icount tests..." << endl;
 
-  ///
-  /// Run range Icount test in its simplest form for sanity check
-  ///
-
-  // Reset reference and results arrays
-  cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
-  cudaMemset(ref_array, 0, sizeof(Real_type) * array_length);
-
-  //
-  // Generate reference result to check correctness.
-  // Note: Reference does not use RAJA!!!
-  //
-  for (Index_type i = 0; i < array_length; ++i) {
-    ref_array[i] = parent[i] * parent[i];
-  }
-
-  forall_Icount<cuda_exec<block_size> >(
-      0, array_length, 0, [=] __device__(Index_type icount, Index_type idx) {
-        test_array[icount] = parent[idx] * parent[idx];
-      });
-
-  s_ntests_run++;
-  if (!array_equal(ref_array, test_array, array_length)) {
-    cout << "\n TEST FAILURE " << endl;
-    cout << endl << endl;
-    for (Index_type i = 0; i < is_indices.size(); ++i) {
-      cout << "test_array[" << is_indices[i]
-           << "] = " << test_array[is_indices[i]] << " ( "
-           << ref_array[is_indices[i]] << " ) " << endl;
-    }
-    cout << endl;
-  } else {
-    s_ntests_passed++;
-  }
-#if defined(RAJA_ENABLE_AGENCY) && 0
-  cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
-  forall_Icount<IndexSet::ExecPolicy<seq_segit, agency_cuda_exec>>(
-      0, array_length, 0, [=] __device__ (Index_type icount, Index_type idx) {
-        test_array[icount] = parent[idx] * parent[idx];
-      });
-
-  s_ntests_run++;
-  if (!array_equal(ref_array, test_array, array_length)) {
-    cout << "\n TEST FAILURE " << endl;
-    cout << endl << endl;
-    for (Index_type i = 0; i < is_indices.size(); ++i) {
-      cout << "test_array[" << is_indices[i]
-           << "] = " << test_array[is_indices[i]] << " ( "
-           << ref_array[is_indices[i]] << " ) " << endl;
-    }
-    cout << endl;
-  } else {
-    s_ntests_passed++;
-  }
-
-#endif
-
-  ///
-  /// Run Icount test with IndexSet containing multiple segments.
-  ///
-
-  // Reset reference and results arrays
-  cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
-  cudaMemset(ref_array, 0, sizeof(Real_type) * array_length);
-
-  //
-  // Generate reference result to check correctness.
-  // Note: Reference does not use RAJA!!!
-  //
-  Index_type test_alen = is_indices.size();
-  for (Index_type i = 0; i < test_alen; ++i) {
-    ref_array[i] = parent[is_indices[i]] * parent[is_indices[i]];
-  }
-
-  forall_Icount<IndexSet::ExecPolicy<seq_segit, cuda_exec<block_size> > >(
-      iset, [=] __device__(Index_type icount, Index_type idx) {
-        test_array[icount] = parent[idx] * parent[idx];
-      });
-
-  s_ntests_run++;
-  if (!array_equal(ref_array, test_array, test_alen)) {
-    cout << "\n TEST FAILURE " << endl;
-    cout << endl << endl;
-    for (Index_type i = 0; i < test_alen; ++i) {
-      cout << "test_array[" << is_indices[i]
-           << "] = " << test_array[is_indices[i]] << " ( "
-           << ref_array[is_indices[i]] << " ) " << endl;
-    }
-    cout << endl;
-  } else {
-    s_ntests_passed++;
-  }
+  runAllSimpleForallIcountTests<block_size>(test_array, ref_array, array_length, parent);
+  runAllMultiSegmentForallIcountTests<block_size>(test_array, ref_array, parent, array_length, is_indices, iset);
 
 #if defined(RAJA_ENABLE_AGENCY) && 0
   cudaMemset(test_array, 0, sizeof(Real_type) * array_length);
